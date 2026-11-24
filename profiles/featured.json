@@ -1,0 +1,68 @@
+{
+  "creators": [
+    {
+      "id": "demo_guywiththejeans",
+      "name": "GuyWithTheJeans",
+      "accent": "#3B82F6",
+      "category": "Gaming",
+      "bio": "Laid-back gaming streams, good vibes and great company.",
+      "avatar": "",
+      "platforms": [
+        {
+          "type": "twitch",
+          "url": "https://www.twitch.tv/guywiththejeans"
+        }
+      ],
+      "campaigns": [
+        {
+          "id": "demo_c_gwtj_live",
+          "name": "Watch me live",
+          "headline": "Watch me live on Twitch!",
+          "message": "Chill gameplay, real conversations and a chat that feels like home.",
+          "cta": "",
+          "format": "live"
+        },
+        {
+          "id": "demo_c_gwtj_gaming",
+          "name": "Daily gaming content",
+          "headline": "Follow for daily gaming content",
+          "message": "New streams every week. Hit follow so you never miss one.",
+          "cta": "",
+          "format": "gaming"
+        }
+      ]
+    },
+    {
+      "id": "demo_iamdoughnutdude",
+      "name": "iamDoughnutDude",
+      "accent": "#F472B6",
+      "category": "Gaming",
+      "bio": "Sweet plays, chaotic fun and a community that always shows up.",
+      "avatar": "",
+      "platforms": [
+        {
+          "type": "twitch",
+          "url": "https://www.twitch.tv/iamdoughnutdude"
+        }
+      ],
+      "campaigns": [
+        {
+          "id": "demo_c_idd_community",
+          "name": "Join the community",
+          "headline": "Come join our gaming community",
+          "message": "Friendly chat, community game nights and plenty of laughs.",
+          "cta": "",
+          "format": "spotlight"
+        },
+        {
+          "id": "demo_c_idd_stream",
+          "name": "Next stream",
+          "headline": "Catch my next stream!",
+          "message": "Grab a snack and come hang out. Doughnuts optional.",
+          "cta": "",
+          "format": "motion"
+        }
+      ]
+    }
+  ]
+}

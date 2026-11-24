@@ -1,0 +1,33 @@
+body { width: 360px; min-height: 420px; background: var(--bg); }
+.pop-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.pop-main { padding: 14px 16px; display: flex; flex-direction: column; gap: 18px; }
+.sec-title { font-size: var(--t-sm); font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; }
+
+.status { padding: 14px; }
+.status-title { font-weight: 700; font-size: var(--t-md); }
+.status-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--text-3); flex: none; box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 0%, transparent); }
+.status-dot.on { background: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 20%, transparent); }
+.status-dot.idle { background: var(--brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 20%, transparent); }
+.status-dot.off { background: var(--text-3); }
+.site-row { margin-top: 12px; padding: 12px 0 0 !important; border-top: 1px solid var(--border) !important; }
+.site-row .title { font-size: var(--t-sm); }
+.site-row .desc { font-size: var(--t-xs); }
+
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mode-grid .choice { padding: 10px 12px; gap: 8px; }
+.mode-grid .choice .title { font-size: var(--t-sm); }
+.mode-grid .choice .desc { font-size: 11.5px; line-height: 1.35; }
+.mode-grid .choice .dot { width: 14px; height: 14px; }
+.mode-grid .choice[aria-checked="true"] .dot { border-width: 4px; }
+
+.pool { display: flex; flex-direction: column; gap: 6px; }
+.pool-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+.pool-item .name { font-weight: 650; font-size: var(--t-sm); }
+.pool-item .meta { font-size: var(--t-xs); color: var(--text-3); display: flex; align-items: center; gap: 4px; }
+.pool-item .meta svg { width: 12px; height: 12px; }
+.pool-item .badge { margin-left: auto; }
+.notice { font-size: var(--t-xs); line-height: 1.45; color: var(--text-2); background: var(--brand-soft); border-radius: 10px; padding: 8px 10px; }
+.pool .empty { padding: 18px 14px; font-size: var(--t-sm); }
+
+.pop-foot { display: flex; gap: 8px; padding: 12px 16px 16px; }
+body.disabled .pop-main > section:not(.status) { opacity: .5; pointer-events: none; }

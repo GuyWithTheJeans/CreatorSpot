@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CreatorSpot Dashboard</title>
+<link rel="icon" href="../icons/icon32.png">
+<link rel="stylesheet" href="../ui/design.css">
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="side" aria-label="Dashboard">
+      <a class="logo" href="#overview"><img src="../icons/icon48.png" alt="">CreatorSpot</a>
+      <div class="nav" id="nav">
+        <a href="#overview" data-view="overview"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 3 10.5V21h6v-6h6v6h6V10.5L12 3Z"/></svg>Overview</a>
+        <a href="#creators" data-view="creators"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6H2Zm15.5 0c0-1.9-.7-3.6-1.9-4.9 3.4.1 6.4 2.2 6.4 4.9h-4.5Z"/></svg>Creators</a>
+        <a href="#campaigns" data-view="campaigns"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 10v4a1 1 0 0 0 1 1h2l1 5h3l-1-5h1l8 4V5l-8 4H4a1 1 0 0 0-1 1Zm18 2a3 3 0 0 0-1.5-2.6v5.2A3 3 0 0 0 21 12Z"/></svg>Campaigns</a>
+        <a href="#rotation" data-view="rotation"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.3A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8Zm8 8a8 8 0 0 1-15.4 3H7v-2H1v6h2v-2.3A10 10 0 0 0 22 12h-2Z"/></svg>Rotation</a>
+        <a href="#analytics" data-view="analytics"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 20V10h3v10H4Zm6.5 0V4h3v16h-3ZM17 20v-7h3v7h-3Z"/></svg>Analytics</a>
+        <a href="#settings" data-view="settings"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m19.4 13 .1-1-.1-1 2.1-1.6-2-3.5-2.5 1a7 7 0 0 0-1.7-1L15 3h-4l-.3 2.9a7 7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11l-.1 1 .1 1-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.3-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5-2.1-1.6ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>Settings</a>
+      </div>
+      <div class="side-foot">
+        <div class="side-status" id="sideStatus"></div>
+        <a class="subtle" href="../privacy.html" target="_blank">Privacy policy</a>
+      </div>
+    </nav>
+    <main class="main" id="view" tabindex="-1"></main>
+  </div>
+
+  <dialog class="modal" id="editor" aria-labelledby="editorTitle">
+    <form method="dialog" id="editorForm" novalidate>
+      <div class="modal-head">
+        <h3 id="editorTitle"></h3>
+        <button class="btn icon ghost" value="cancel" formnovalidate aria-label="Close"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4z"/></svg></button>
+      </div>
+      <div class="modal-body" id="editorBody"></div>
+      <div class="modal-foot">
+        <button class="btn" value="cancel" formnovalidate>Cancel</button>
+        <button class="btn primary" id="editorSave" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal confirm" id="confirm" aria-labelledby="confirmTitle">
+    <form method="dialog">
+      <div class="modal-body">
+        <h3 id="confirmTitle"></h3>
+        <p class="muted" id="confirmText" style="margin-top:8px"></p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" value="cancel">Cancel</button>
+        <button class="btn primary" id="confirmOk" value="ok">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="../lib/core.js"></script>
+  <script src="../lib/platforms.js"></script>
+  <script src="../lib/defaults.js"></script>
+  <script src="../lib/schema.js"></script>
+  <script src="../lib/rotation.js"></script>
+  <script src="../lib/store.js"></script>
+  <script src="../lib/render.js"></script>
+  <script src="../lib/payload.js"></script>
+  <script src="../lib/shared.js"></script>
+  <script src="../ui/ui.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

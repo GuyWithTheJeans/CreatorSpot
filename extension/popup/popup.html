@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CreatorSpot</title>
+<link rel="stylesheet" href="../ui/design.css">
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="pop-head">
+    <span class="logo"><img src="../icons/icon32.png" alt="">CreatorSpot</span>
+    <label class="switch" title="Turn CreatorSpot on or off">
+      <input type="checkbox" id="master" aria-label="CreatorSpot is on">
+      <span></span>
+    </label>
+  </header>
+
+  <main class="pop-main">
+    <section class="notice update hidden" id="update"></section>
+
+    <section class="status card flat" id="status">
+      <div class="row">
+        <span class="status-dot" id="statusDot"></span>
+        <div class="grow">
+          <div class="status-title" id="statusTitle">Checking this page…</div>
+          <div class="subtle" id="statusSub"></div>
+        </div>
+      </div>
+      <div class="setting site-row" id="siteRow">
+        <div>
+          <div class="title">Run on <span id="siteName">this site</span></div>
+          <div class="desc">Turn off to leave this site exactly as it is.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="siteToggle" aria-label="Run on this site"><span></span></label>
+      </div>
+    </section>
+
+    <section class="stack">
+      <div class="row between">
+        <h3 class="sec-title">Rotation mode</h3>
+        <span class="badge brand" id="modeBadge"></span>
+      </div>
+      <div class="mode-grid" id="modes" role="radiogroup" aria-label="Rotation mode"></div>
+    </section>
+
+    <section class="stack">
+      <div class="row between">
+        <h3 class="sec-title">Now promoting</h3>
+        <span class="subtle" id="poolCount"></span>
+      </div>
+      <div class="pool" id="pool"></div>
+    </section>
+  </main>
+
+  <footer class="pop-foot">
+    <button class="btn primary grow" id="openDashboard">Open dashboard</button>
+    <button class="btn" id="openCampaigns">New campaign</button>
+  </footer>
+
+  <script src="../lib/core.js"></script>
+  <script src="../lib/platforms.js"></script>
+  <script src="../lib/defaults.js"></script>
+  <script src="../lib/schema.js"></script>
+  <script src="../lib/rotation.js"></script>
+  <script src="../lib/store.js"></script>
+  <script src="../lib/shared.js"></script>
+  <script src="../ui/ui.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

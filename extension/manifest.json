@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "CreatorSpot",
+  "short_name": "CreatorSpot",
+  "version": "0.1.3",
+  "description": "Turn web ad slots into promotions for independent creators. Private by design: everything stays in your browser.",
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "action": {
+    "default_title": "CreatorSpot",
+    "default_popup": "popup/popup.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png" }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["lib/core.js", "lib/platforms.js", "lib/defaults.js", "lib/schema.js", "lib/rotation.js", "lib/store.js", "lib/live.js", "lib/payload.js", "lib/shared.js", "background.js"]
+  },
+  "options_ui": { "page": "dashboard/dashboard.html", "open_in_tab": true },
+  "permissions": ["storage", "unlimitedStorage", "declarativeNetRequest"],
+  "optional_host_permissions": ["https://api.twitch.tv/*"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["lib/core.js", "lib/platforms.js", "lib/render.js", "content/sites.js", "content/detector.js", "content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [{ "id": "ad_networks", "enabled": false, "path": "rules/ad_networks.json" }]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "creatorspot@creatorspot.app",
+      "strict_min_version": "121.0",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  }
+}

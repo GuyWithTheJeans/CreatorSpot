@@ -1,0 +1,24 @@
+HOW TO INSTALL CREATORSPOT
+==========================
+
+Easiest way: double-click "Install CreatorSpot" in this folder.
+A small window opens and walks you through it.
+
+Doing it by hand (Brave):
+
+1. Open Brave. Type  brave://extensions  in the address bar and press Enter.
+   (Chrome: chrome://extensions   Edge: edge://extensions)
+
+2. Turn ON the "Developer mode" switch in the top-right corner.
+
+3. Click "Load unpacked" and choose THIS folder (the CreatorSpot folder
+   on your Desktop). Click "Select Folder".
+
+4. Done! Click the puzzle-piece icon in the toolbar and pin CreatorSpot.
+
+Important: keep this folder where it is. If you move or delete it,
+the extension stops working.
+
+To share with a friend: right-click this folder > "Send to" >
+"Compressed (zipped) folder", send them the ZIP, and tell them to unzip it
+to their Desktop first.

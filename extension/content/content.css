@@ -1,0 +1,16 @@
+/* Injected by the browser as an extension stylesheet (not blocked by page security policies). */
+[data-cs-claimed="inside"][data-cs-claimed] > :not(creatorspot-promo) {
+  display: none !important;
+}
+[data-cs-claimed="inside"][data-cs-claimed] {
+  display: block !important;
+  visibility: visible !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background: transparent !important;
+}
+creatorspot-promo {
+  display: block !important;
+}

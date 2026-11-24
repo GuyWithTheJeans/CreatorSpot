@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome to CreatorSpot</title>
+<link rel="icon" href="../icons/icon32.png">
+<link rel="stylesheet" href="../ui/design.css">
+<link rel="stylesheet" href="welcome.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <span class="logo"><img src="../icons/icon48.png" alt="">CreatorSpot</span>
+      <ol class="steps" id="steps" aria-label="Setup progress">
+        <li>Welcome</li><li>Your channel</li><li>Rotation</li><li>Ready</li>
+      </ol>
+    </header>
+
+    <main class="panel card" id="panel">
+      <!-- Step 1 -->
+      <section class="step" data-step="0">
+        <div class="split">
+          <div class="stack lg">
+            <span class="badge brand">Welcome</span>
+            <h1>Swap boring ads for <span class="grad-text">creators worth discovering</span>.</h1>
+            <p class="lead muted">CreatorSpot finds standard ad slots on the websites you visit and shows promotions for independent streamers and creators instead.</p>
+            <ul class="points">
+              <li><span class="ic">1</span><div><strong>Discover new creators</strong><p class="muted">Every promotion links straight to a real channel.</p></div></li>
+              <li><span class="ic">2</span><div><strong>Creators lift each other up</strong><p class="muted">A fair rotation shares placements between participating creators.</p></div></li>
+              <li><span class="ic">3</span><div><strong>Private by design</strong><p class="muted">No accounts, no tracking. Settings and statistics stay in your browser.</p></div></li>
+            </ul>
+          </div>
+          <div class="showcase" id="showcase"></div>
+        </div>
+      </section>
+
+      <!-- Step 2 -->
+      <section class="step" data-step="1" hidden>
+        <div class="narrow stack lg">
+          <span class="badge brand">Your channel</span>
+          <h2>Are you a creator?</h2>
+          <p class="muted">Add your channel and CreatorSpot can promote you too. You can add more platforms, pictures and campaigns later in the dashboard.</p>
+          <label class="field">Creator name<input class="input" id="obName" maxlength="40" placeholder="Your display name"></label>
+          <label class="field">Channel link<input class="input" id="obLink" type="url" placeholder="https://www.twitch.tv/yourchannel"><span class="hint" id="obDetected">Twitch, YouTube, TikTok, Kick, Discord or any website.</span></label>
+          <div class="error-text hidden" id="obError" role="alert"></div>
+          <p class="subtle">Not a creator? Skip this step and simply enjoy discovering creators.</p>
+        </div>
+      </section>
+
+      <!-- Step 3 -->
+      <section class="step" data-step="2" hidden>
+        <div class="narrow stack lg">
+          <span class="badge brand">Rotation</span>
+          <h2>Who should appear in promotions?</h2>
+          <p class="muted">You can change this at any time from the toolbar button.</p>
+          <div class="stack" id="obModes" role="radiogroup" aria-label="Rotation mode"></div>
+        </div>
+      </section>
+
+      <!-- Step 4 -->
+      <section class="step" data-step="3" hidden>
+        <div class="split">
+          <div class="stack lg">
+            <span class="badge ok"><span class="pip"></span>All set</span>
+            <h2>You’re ready to go.</h2>
+            <p class="muted">Browse as usual. When a page has a standard ad slot, a creator promotion appears in its place, clearly labeled “Creator promo”.</p>
+            <div class="tip"><strong>Pin CreatorSpot</strong><p class="muted">Click the puzzle-piece icon in your toolbar and pin CreatorSpot to switch modes or pause it on a site in one click.</p></div>
+            <div class="tip hidden" id="braveTip"><strong>Using Brave?</strong><p class="muted">Brave Shields hide ad slots on their own. CreatorSpot detects this and places promotions beside hidden slots. If a site still shows no promotions, lower Shields for that site.</p></div>
+          </div>
+          <div class="showcase" id="showcase2"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="nav-row">
+      <button class="btn ghost" id="back">Back</button>
+      <div class="row">
+        <button class="btn ghost hidden" id="skip">Skip</button>
+        <button class="btn primary" id="next">Get started</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../lib/core.js"></script>
+  <script src="../lib/platforms.js"></script>
+  <script src="../lib/defaults.js"></script>
+  <script src="../lib/schema.js"></script>
+  <script src="../lib/rotation.js"></script>
+  <script src="../lib/store.js"></script>
+  <script src="../lib/render.js"></script>
+  <script src="../lib/payload.js"></script>
+  <script src="../ui/ui.js"></script>
+  <script src="welcome.js"></script>
+</body>
+</html>

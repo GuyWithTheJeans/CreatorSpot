@@ -1,0 +1,5 @@
+dist/
+test-results/
+extension/_metadata/
+CLAUDE.md
+.claude/

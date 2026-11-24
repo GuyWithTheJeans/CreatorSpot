@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Daily Pixel: CreatorSpot test site</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { margin: 0; font: 16px/1.6 Georgia, serif; color: #1d1d1f; background: #fafafa; }
+  header { background: #111; color: #fff; padding: 14px 24px; font: 700 22px/1 system-ui, sans-serif; }
+  .top-ad { display: flex; justify-content: center; padding: 12px 0; background: #eee; }
+  .wrap { display: grid; grid-template-columns: 1fr 300px; gap: 32px; max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+  article p { margin: 0 0 1em; }
+  aside > * { margin-bottom: 24px; }
+  .label { font: 11px system-ui, sans-serif; color: #888; text-transform: uppercase; letter-spacing: .1em; }
+  /* Fake ad creatives (what an ad network would have rendered). */
+  .fake-creative { width: 100%; height: 100%; border: 0; display: block; }
+  .site-hidden { display: none; }
+  .hero-ad { display: flex; justify-content: center; margin: 24px 0; }
+  .bottom-ads { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin: 32px auto; max-width: 1100px; }
+  @media (max-width: 800px) { .wrap { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>The Daily Pixel</header>
+
+<!-- 1. Leaderboard 728x90: AdSense tag with a loaded creative -->
+<div class="top-ad">
+  <ins class="adsbygoogle" id="slot-leaderboard" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-0000" data-ad-slot="1111">
+    <iframe class="fake-creative" id="aswift_1" srcdoc="<body style='margin:0;background:#ffd400;font:bold 28px sans-serif;display:grid;place-items:center;height:90px'>BUY CHEAP STUFF NOW</body>"></iframe>
+  </ins>
+</div>
+
+<div class="wrap">
+  <article>
+    <h1>Indie games are having a moment</h1>
+    <p id="real-content">Independent studios shipped more games this year than ever before. Small teams are finding audiences through streaming, short clips and community servers, and players are discovering new favourites through the creators they already watch. This paragraph is real content and must never be replaced.</p>
+
+    <!-- 2. In-content 300x250 GPT slot with an ad iframe -->
+    <div id="div-gpt-ad-1234-0" style="width:300px;height:250px;margin:16px auto">
+      <div id="google_ads_iframe_/123/home_0__container__">
+        <iframe id="google_ads_iframe_/123/home_0" width="300" height="250" class="fake-creative" srcdoc="<body style='margin:0;background:#0af;font:bold 22px sans-serif;display:grid;place-items:center;height:250px;color:#fff'>Generic Ad 300x250</body>"></iframe>
+      </div>
+    </div>
+
+    <p>Streaming has become the new storefront. A single evening spent with a passionate creator can introduce thousands of viewers to a game they would never have found on their own.</p>
+
+    <!-- 3. Responsive AdSense slot that never filled (empty, zero height): uses reserved/declared sizing -->
+    <ins class="adsbygoogle" id="slot-responsive" style="display:block" data-ad-client="ca-pub-0000" data-ad-slot="2222" data-ad-format="auto"></ins>
+
+    <p>Communities thrive when creators support each other. Raids, shout-outs and collaborations have always been how smaller channels grow.</p>
+
+    <!-- 4. A non-ad element whose class merely looks like an ad container, with real text: must NOT be replaced -->
+    <div class="ad-container" id="false-positive" style="width:100%;height:260px;background:#f0f0f0;padding:12px;box-sizing:border-box">
+      <strong>Editor's note.</strong> This box uses an ad-like class name but contains real editorial content. It is a test for false positives and should remain exactly as it is, because the text inside is longer than any advertisement would carry and readers need it. CreatorSpot must leave it alone, show nothing over it, and never hide it.
+    </div>
+
+    <!-- 5. Mobile banner 320x50 -->
+    <div style="margin:16px 0"><ins class="adsbygoogle" id="slot-mobile" style="display:inline-block;width:320px;height:50px" data-ad-slot="3333"></ins></div>
+
+    <!-- 6. Slot hidden by the site itself (e.g. desktop-only ad on this layout): must not be surfaced -->
+    <div class="site-hidden"><div id="div-gpt-ad-hidden-1" style="width:300px;height:250px"></div></div>
+  </article>
+
+  <aside>
+    <div class="label">Advertisement</div>
+    <!-- 7. Skyscraper 300x600 via a "weak" class marker with a creative inside -->
+    <div class="ad-slot" id="slot-sky" style="width:300px;height:600px"><img class="fake-creative" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='600'%3E%3Crect width='300' height='600' fill='%23c33'/%3E%3C/svg%3E"></div>
+    <!-- 8. Narrow skyscraper 160x600 -->
+    <div data-ad-slot="4444" id="slot-narrow" style="width:160px;height:600px;background:#ddd"></div>
+  </aside>
+</div>
+
+<!-- 9. Billboard 970x250 -->
+<div class="hero-ad"><div id="div-gpt-ad-billboard" style="width:970px;height:250px;background:#ccc"></div></div>
+
+<!-- 11. Sticky ad that forces itself back on scroll with inline !important (like IGN's masthead) -->
+<div id="div-gpt-ad-sticky" style="width:728px;height:90px;margin:24px auto"><div id="sticky-creative" style="width:728px;height:90px;background:#f80;font:bold 24px sans-serif;display:grid;place-items:center">STICKY AD</div></div>
+
+<div class="bottom-ads" id="dynamic-zone"></div>
+
+<script>
+  // 11. On scroll, the sticky ad re-shows itself pinned to the top of the screen.
+  addEventListener('scroll', () => {
+    document.getElementById('sticky-creative').style.cssText = 'display:block !important;position:fixed;top:0;left:0;width:728px;height:90px;background:#f80;z-index:9999';
+  });
+  // 10. Lazy-loaded ad injected after load (tests the mutation observer).
+  setTimeout(() => {
+    const ins = document.createElement('ins');
+    ins.className = 'adsbygoogle';
+    ins.id = 'slot-dynamic';
+    ins.style.cssText = 'display:inline-block;width:336px;height:280px;background:#bbb';
+    document.getElementById('dynamic-zone').appendChild(ins);
+  }, 1500);
+</script>
+</body>
+</html>

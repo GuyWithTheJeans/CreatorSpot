@@ -1,0 +1,33 @@
+CREATORSPOT FOR GOOGLE CHROME
+=============================
+
+Takes about 1 minute.
+
+1. Make sure you UNZIPPED this first.
+   Right-click the ZIP file > "Extract All..." > choose your Desktop > "Extract".
+   You should now have a "CreatorSpot" folder on your Desktop. Open it.
+   (If you just double-clicked the ZIP to look inside, it will not work.)
+
+2. Double-click "Install CreatorSpot". A small window opens and walks you
+   through it. If Windows asks "Do you want to run this file?", click "Run"
+   (or "More info" > "Run anyway").
+
+   Or do it by hand:
+   a. Open Chrome. Type  chrome://extensions  in the address bar, press Enter.
+   b. Turn ON "Developer mode" (switch in the top-right corner).
+   c. Click "Load unpacked", pick the CreatorSpot folder on your Desktop,
+      click "Select Folder".
+
+3. Click the puzzle-piece icon at the top-right of Chrome and click the pin
+   next to CreatorSpot.
+
+Done. Visit a site with ads (for example ign.com) and you will see
+GuyWithTheJeans and iamDoughnutDude promos where the ads were.
+
+Keep the CreatorSpot folder on your Desktop. If you move or delete it,
+the extension stops working.
+
+GETTING A NEW VERSION
+When you get a newer ZIP: delete the old CreatorSpot folder, unzip the new
+one to the same place, then go to chrome://extensions and click the
+circular-arrow (reload) button on CreatorSpot.
