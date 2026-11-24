@@ -11,7 +11,7 @@ export const BROWSERS = {
   brave: 'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
 };
 
-export async function launch(exe, { headless = true, width = 1280, height = 900 } = {}) {
+export async function launch(exe, { headless = true, width = 1280, height = 900, extraArgs = [] } = {}) {
   const profile = mkdtempSync(path.join(tmpdir(), 'cs-e2e-'));
   const args = [
     '--remote-debugging-pipe',
@@ -22,6 +22,7 @@ export async function launch(exe, { headless = true, width = 1280, height = 900 
     '--user-data-dir=' + profile,
     `--window-size=${width},${height}`,
     ...(headless ? ['--headless=new'] : []),
+    ...extraArgs,
     'about:blank',
   ];
   const proc = spawn(exe, args, { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
