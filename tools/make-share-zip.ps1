@@ -14,7 +14,7 @@ $folder = Join-Path $stage 'CreatorSpot'
 New-Item -ItemType Directory -Force $folder | Out-Null
 Get-ChildItem $ext | Where-Object { $_.Name -ne '_metadata' } | Copy-Item -Destination $folder -Recurse -Force
 $helper = Join-Path $PSScriptRoot 'easy-install'
-Copy-Item (Join-Path $helper 'Install CreatorSpot.cmd'), (Join-Path $helper 'install-helper.ps1'), (Join-Path $helper 'Update CreatorSpot.cmd'), (Join-Path $helper 'update-helper.ps1'), (Join-Path $helper 'START HERE (Chrome).txt') -Destination $folder -Force
+Copy-Item (Join-Path $helper 'Install CreatorSpot.cmd'), (Join-Path $helper 'install-helper.ps1'), (Join-Path $helper 'Update CreatorSpot.cmd'), (Join-Path $helper 'update-helper.ps1'), (Join-Path $helper 'register-updater.ps1'), (Join-Path $helper 'updater-host.ps1'), (Join-Path $helper 'updater-host.bat'), (Join-Path $helper 'START HERE (Chrome).txt') -Destination $folder -Force
 
 # Pictures for the install guide window.
 Copy-Item (Join-Path $root 'docs/install/*') (New-Item -ItemType Directory -Force (Join-Path $folder 'guide')) -Force

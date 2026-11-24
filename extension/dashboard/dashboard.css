@@ -121,3 +121,13 @@ dialog.confirm { width: min(440px, calc(100vw - 32px)); }
   .campaign-row .row-actions { flex-direction: row; align-items: center; }
   .share-row { grid-template-columns: 110px 1fr 48px; }
 }
+
+/* "Buy us a doughnut" support link (sidebar) */
+.donut { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; text-decoration: none; color: var(--text);
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--brand-grad) border-box; border: 1.5px solid transparent;
+  transition: transform .15s ease, box-shadow .15s ease; }
+.donut:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(124, 92, 255, .28); }
+.donut-icon { font-size: 22px; line-height: 1; transition: transform .3s ease; }
+.donut:hover .donut-icon { transform: rotate(-20deg) scale(1.12); }
+.donut strong { display: block; font-size: 13px; background: var(--brand-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.donut small { display: block; font-size: 11px; color: var(--text-3); }

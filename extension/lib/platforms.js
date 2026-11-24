@@ -16,6 +16,8 @@
       '<path fill="currentColor" d="M4 3h5v5h2V6h2V4h2V3h5v6h-2v2h-2v2h2v2h2v6h-5v-1h-2v-2h-2v-2H9v5H4V3Z"/>',
     discord:
       '<path fill="currentColor" d="M19 5.6A16 16 0 0 0 15 4.4l-.5 1a15 15 0 0 0-5 0l-.5-1A16 16 0 0 0 5 5.6C2.5 9.3 1.8 13 2.1 16.6A16 16 0 0 0 7 19l1-1.6a10 10 0 0 1-1.6-.8l.4-.3a11.5 11.5 0 0 0 10.4 0l.4.3-1.6.8 1 1.6a16 16 0 0 0 4.9-2.4c.4-4.2-.7-7.9-2.9-11ZM8.8 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm6.4 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/>',
+    tips:
+      '<path fill="currentColor" d="M12 21.2 10.6 20C5.4 15.3 2 12.2 2 8.4 2 5.3 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1A6 6 0 0 1 16.5 3C19.6 3 22 5.3 22 8.4c0 3.8-3.4 6.9-8.6 11.6L12 21.2Z"/>',
     website:
       '<path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.9 6h-3a15.7 15.7 0 0 0-1.3-3.6A8 8 0 0 1 18.9 8ZM12 4c.8 1.2 1.5 2.5 1.9 4h-3.8c.4-1.5 1.1-2.8 1.9-4ZM4.3 14a8 8 0 0 1 0-4h3.4a16.5 16.5 0 0 0 0 4H4.3Zm.8 2h3c.3 1.3.8 2.5 1.3 3.6A8 8 0 0 1 5.1 16Zm3-8h-3a8 8 0 0 1 4.3-3.6C8.9 5.5 8.4 6.7 8.1 8ZM12 20c-.8-1.2-1.5-2.5-1.9-4h3.8c-.4 1.5-1.1 2.8-1.9 4Zm2.3-6H9.7a14.7 14.7 0 0 1 0-4h4.6a14.7 14.7 0 0 1 0 4Zm.3 5.6c.5-1.1 1-2.3 1.3-3.6h3a8 8 0 0 1-4.3 3.6Zm1.7-5.6a16.5 16.5 0 0 0 0-4h3.4a8 8 0 0 1 0 4h-3.4Z"/>',
   };
@@ -88,6 +90,29 @@
       placeholder: 'https://discord.gg/yourinvite',
       parseHandle: handleFromPath(/(^|\.)(discord\.gg|discord\.com)$/i, /^\/(?:invite\/)?([A-Za-z0-9-]{2,32})\/?$/),
       buildUrl: (h) => 'https://discord.gg/' + encodeURIComponent(h),
+    },
+    // Tip and support pages, so viewers can support a creator straight from a promo.
+    tips: {
+      id: 'tips',
+      label: 'Tips',
+      color: '#F472B6',
+      verb: 'Send a tip',
+      followVerb: 'Support me',
+      supportsLive: false,
+      placeholder: 'https://streamlabs.com/yourname/tip',
+      parseHandle: (url) => {
+        try {
+          const u = new URL(url);
+          const host = u.hostname.replace(/^www./, '').toLowerCase();
+          const parts = u.pathname.split('/').filter(Boolean);
+          if ((host === 'streamlabs.com' || host === 'streamelements.com') && parts[1] === 'tip') return parts[0];
+          if (['ko-fi.com', 'buymeacoffee.com', 'paypal.me', 'patreon.com', 'tiltify.com'].includes(host) && parts[0]) return parts[0];
+          return null;
+        } catch (e) {
+          return null;
+        }
+      },
+      buildUrl: (h) => 'https://streamlabs.com/' + encodeURIComponent(h) + '/tip',
     },
     website: {
       id: 'website',

@@ -1,5 +1,7 @@
 # CreatorSpot
 
+[![Buy us a doughnut](https://img.shields.io/badge/%F0%9F%8D%A9_Buy_us_a_doughnut-Streamlabs-F472B6?style=for-the-badge&labelColor=7C5CFF)](https://streamlabs.com/guywiththejeans/tip)
+
 CreatorSpot is a browser extension that turns standard website ad slots into promotions for independent creators. Creators can promote themselves, or join a fair rotation in which they promote one another.
 
 * Works in **Chrome, Brave, Edge and Opera** from one package. Tested automatically in Chrome 157, Edge 158 and Brave 1.100.
@@ -34,9 +36,7 @@ CreatorSpot is a browser extension that turns standard website ad slots into pro
 
 </details>
 
-**Updates:** CreatorSpot's popup tells you when a new version is out. Double-click **Update CreatorSpot** in the CreatorSpot folder, then click the circle arrow on CreatorSpot in your extensions page.
-
-![Click the circle arrow to update](docs/install/10-reload.png)
+**Updates install themselves.** When a new version comes out, CreatorSpot downloads it and restarts on its own, keeping your sign-in and settings. Leave Developer mode on and keep the CreatorSpot folder where it is. If an update ever gets stuck, click the CreatorSpot icon and press **Update now**.
 
 New creators and profile changes show up automatically. You never reinstall for those.
 

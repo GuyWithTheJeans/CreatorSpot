@@ -1,3 +1,8 @@
 @echo off
-rem Double-click this file to open the CreatorSpot install helper.
-start "" powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -STA -File "%~dp0install-helper.ps1"
+rem Double-click this file to open the CreatorSpot install guide.
+if exist "%~dp0install-helper.ps1" (
+  start "" powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -STA -File "%~dp0install-helper.ps1"
+  exit /b
+)
+rem Opened from inside the ZIP (not unzipped yet): unzip it to the Desktop, then open the guide.
+start "" powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -STA -Command "Add-Type -AssemblyName System.Windows.Forms; $desk = if ($env:CS_TEST_DESK) { $env:CS_TEST_DESK } else { [Environment]::GetFolderPath('Desktop') }; $dl = if ($env:CS_TEST_DL) { $env:CS_TEST_DL } else { Join-Path $env:USERPROFILE 'Downloads' }; $zip = Get-ChildItem -LiteralPath $dl, $desk -Filter 'CreatorSpot*.zip' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1; if (-not $zip) { [void][System.Windows.Forms.MessageBox]::Show('Please unzip CreatorSpot first. Right-click the CreatorSpot ZIP file, click Extract All, pick Desktop, then click Extract. Then open the CreatorSpot folder and double-click Install CreatorSpot.', 'Install CreatorSpot'); exit }; try { Expand-Archive -LiteralPath $zip.FullName -DestinationPath $desk -Force -ErrorAction Stop } catch { [void][System.Windows.Forms.MessageBox]::Show('Could not unzip CreatorSpot. Right-click the ZIP file, click Extract All, pick Desktop, then click Extract.', 'Install CreatorSpot'); exit }; $helper = Join-Path $desk 'CreatorSpot\install-helper.ps1'; if (Test-Path -LiteralPath $helper) { & $helper } else { [void][System.Windows.Forms.MessageBox]::Show('Could not find the CreatorSpot folder after unzipping. Right-click the ZIP file and click Extract All.', 'Install CreatorSpot') }"

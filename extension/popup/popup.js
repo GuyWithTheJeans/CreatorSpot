@@ -113,10 +113,24 @@
     if (!u || CS.shared.compareVersions(u.version, api.runtime.getManifest().version) <= 0) return box.classList.add('hidden');
     box.classList.remove('hidden');
     box.innerHTML =
-      '<strong>CreatorSpot ' + esc(u.version) + ' is out.</strong> Double-click <b>Update CreatorSpot</b> in your CreatorSpot folder, then click the reload arrow on CreatorSpot in your extensions page.' +
-      '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm primary" id="reloadExt">Open extensions page</button>' +
-      '<a class="btn sm" href="' + esc(u.download) + '" target="_blank" rel="noopener noreferrer">Download</a></div>';
-    $('#reloadExt').addEventListener('click', () => api.tabs.create({ url: 'chrome://extensions/?id=' + api.runtime.id }));
+      '<strong>CreatorSpot ' + esc(u.version) + ' is ready.</strong> <span id="updMsg">One click and it updates itself.</span>' +
+      '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm primary" id="updateNow">Update now</button></div>';
+    $('#updateNow').addEventListener('click', async () => {
+      $('#updateNow').disabled = true;
+      $('#updateNow').textContent = 'Updating…';
+      const r = await api.runtime.sendMessage({ type: 'update-now' }).catch(() => null);
+      if (r && r.ok && r.updated) {
+        $('#updMsg').textContent = 'Done! CreatorSpot is restarting with the new version.';
+        return;
+      }
+      $('#updateNow').disabled = false;
+      $('#updateNow').textContent = 'Try again';
+      $('#updMsg').textContent =
+        (r && r.message) || 'Could not update automatically.';
+      if (r && r.needsHelper) {
+        box.insertAdjacentHTML('beforeend', '<div class="subtle" style="margin-top:6px">Or update by hand: double-click <b>Update CreatorSpot</b> in your CreatorSpot folder, then click the circle arrow on CreatorSpot in your extensions page.</div>');
+      }
+    });
   }
 
   async function load() {

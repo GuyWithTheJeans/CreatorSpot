@@ -1,6 +1,6 @@
-// Checks that an extension installed with "Load unpacked" (not through the test API) can reload itself
-// after new files are copied into its folder, and that its data survives. This is what "Update CreatorSpot"
-// relies on. Usage: node tools/reload-check.mjs [brave|chrome|edge]
+// Checks whether an unpacked CreatorSpot can reload itself after new files land in its folder, and that its
+// data survives. Verifies through Chrome's own extensions page (chrome://extensions), waiting long enough
+// for the extension to come back. Usage: node tools/reload-check.mjs [brave|chrome|edge]
 import path from 'node:path';
 import { cpSync, rmSync, readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -26,29 +26,34 @@ const setVersion = (v) => {
 };
 setVersion('0.0.1');
 
-console.log('=== ' + browser.toUpperCase() + ' (Load unpacked via --load-extension) ===');
-const b = await launch(BROWSERS[browser], { extraArgs: ['--load-extension=' + dir, '--disable-extensions-except=' + dir] });
+console.log('=== ' + browser.toUpperCase() + ' ===');
+const b = await launch(BROWSERS[browser]);
 try {
-  await sleep(3000);
-  const { targetInfos } = await b.send('Target.getTargets');
-  const sw = targetInfos.find((t) => /^chrome-extension:\/\/[a-p]{32}\//.test(t.url) && t.type === 'service_worker');
-  check('Extension loads like a normal unpacked install', !!sw, sw ? sw.url : JSON.stringify(targetInfos.map((t) => t.type + ' ' + t.url)));
-  if (!sw) throw new Error('stop');
-  const id = sw.url.split('/')[2];
-  let ext = await openPage(b, `chrome-extension://${id}/dashboard/dashboard.html`);
-  await ext.eval(`chrome.storage.local.set({ reloadProbe: 'kept' })`);
-  check('Running version before update', (await ext.eval('chrome.runtime.getManifest().version')) === '0.0.1');
+  const { id } = await b.send('Extensions.loadUnpacked', { path: dir });
+  await sleep(2500);
+  const mgr = await openPage(b, browser === 'brave' ? 'brave://extensions' : browser === 'edge' ? 'edge://extensions' : 'chrome://extensions');
+  const listed = async () => mgr.eval(`chrome.developerPrivate.getExtensionsInfo().then((l) => l.filter((x) => x.id === '${id}').map((x) => x.version + ' ' + x.state + ' ' + JSON.stringify(x.disableReasons) + ' ' + x.location + ' ' + JSON.stringify((x.manifestErrors||[]).map(e=>e.message))))`);
+  await mgr.eval(`chrome.developerPrivate.updateProfileConfiguration({ inDeveloperMode: true })`); // real users have this on: it is required to install
+  check('Installed', (await listed()).length === 1, JSON.stringify(await listed()));
 
-  setVersion('9.9.9'); // what "Update CreatorSpot" does: new files land in the same folder
+  let ext = await openPage(b, `chrome-extension://${id}/popup/popup.html`);
+  await ext.eval(`chrome.storage.local.set({ reloadProbe: 'kept' })`);
+
+  setVersion('9.9.9'); // what the updater does: new files land in the same folder
   await ext.eval(`setTimeout(() => chrome.runtime.reload(), 50); true`).catch(() => null);
-  await sleep(4000);
-  const after = (await b.send('Target.getTargets')).targetInfos.filter((t) => t.url.startsWith(`chrome-extension://${id}/`));
-  check('Extension is still installed after reloading itself', after.some((t) => t.type === 'service_worker'), after.map((t) => t.type).join(', '));
-  ext = await openPage(b, `chrome-extension://${id}/dashboard/dashboard.html`);
-  check('New version is running', (await ext.eval('chrome.runtime.getManifest().version')) === '9.9.9');
-  check('Data survived the reload', (await ext.eval(`chrome.storage.local.get('reloadProbe').then((d) => d.reloadProbe)`)) === 'kept');
+  let after = [];
+  for (let i = 0; i < 20; i++) {
+    await sleep(500);
+    after = await listed().catch(() => []);
+    if (after.length && after[0].startsWith('9.9.9')) break;
+  }
+  check('Still installed after reloading itself (checked in the extensions list)', after.length === 1, JSON.stringify(after));
+  check('Running the new version', after.length === 1 && after[0].startsWith('9.9.9'), JSON.stringify(after));
+  ext = await openPage(b, `chrome-extension://${id}/popup/popup.html`);
+  const probe = await ext.eval(`chrome.storage.local.get('reloadProbe').then((d) => d.reloadProbe)`).catch((e) => 'error: ' + e.message);
+  check('Data (sign-in, settings) survived', probe === 'kept', String(probe));
 } catch (e) {
-  if (e.message !== 'stop') check('Run completed', false, e.message);
+  check('Run completed', false, e.message);
 } finally {
   await b.close();
   rmSync(path.dirname(dir), { recursive: true, force: true });

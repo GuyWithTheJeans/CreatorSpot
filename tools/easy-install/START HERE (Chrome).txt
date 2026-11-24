@@ -18,6 +18,6 @@ Web Store. It takes about 2 minutes and you only do it once.
 
 Keep the CreatorSpot folder on your Desktop. Deleting it removes the extension.
 
-New version? The CreatorSpot popup tells you. Double-click "Update CreatorSpot"
-in this folder, then click the circle arrow on CreatorSpot in your browser's
-extensions page.
+Updates install themselves automatically. Just leave Developer mode ON and
+keep this folder where it is. (If an update ever gets stuck, click the
+CreatorSpot icon and press "Update now".)

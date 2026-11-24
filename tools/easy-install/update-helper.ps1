@@ -22,6 +22,7 @@ try {
   $src = Join-Path $tmp 'x\CreatorSpot'
   if (-not (Test-Path (Join-Path $src 'manifest.json'))) { throw 'The download looks wrong, so nothing was changed.' }
   Get-ChildItem $src | Copy-Item -Destination $folder -Recurse -Force
+  try { & (Join-Path $folder 'register-updater.ps1') -Folder $folder } catch { } # turn on automatic updates from now on
   Remove-Item $tmp -Recurse -Force
   Show-Message "Updated to version $latest!`n`nLast step: open your browser's extensions page (chrome://extensions or brave://extensions) and click the circular reload arrow on CreatorSpot."
 } catch {

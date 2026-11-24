@@ -279,7 +279,7 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
     return syncCloud(true);
   }
 
-  async function checkForUpdate(force) {
+  async function checkForUpdate(force, noAuto) {
     if (!CS.shared.configured()) return null;
     const { updateMeta = {} } = await local.get('updateMeta');
     if (!force && updateMeta.checkedAt && Date.now() - updateMeta.checkedAt < CS.shared.UPDATE_EVERY_MS) return updateMeta.update || null;
@@ -294,7 +294,38 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
       /* offline: try again later */
     }
     await local.set({ updateMeta });
+    // Automatic updates: install a new version in the background (at most once an hour per version).
+    const u = updateMeta.update;
+    if (u && !noAuto && !(updateMeta.autoTried === u.version && Date.now() - (updateMeta.autoTriedAt || 0) < 3600000)) {
+      await local.set({ updateMeta: Object.assign({}, updateMeta, { autoTried: u.version, autoTriedAt: Date.now() }) });
+      installUpdate().catch(() => null);
+    }
     return updateMeta.update || null;
+  }
+
+  /**
+   * Install a new version: the CreatorSpot updater helper (set up by "Install CreatorSpot") downloads it into
+   * the CreatorSpot folder, then CreatorSpot restarts itself on the new files. Settings and sign-in are kept.
+   */
+  const UPDATER = 'com.creatorspot.updater';
+  let installing = null;
+  function installUpdate() {
+    if (!installing) installing = doInstallUpdate().finally(() => (installing = null));
+    return installing;
+  }
+  async function doInstallUpdate() {
+    if (!api.runtime.sendNativeMessage) return { ok: false, message: 'Automatic updates are not available in this browser.' };
+    let r;
+    try {
+      r = await api.runtime.sendNativeMessage(UPDATER, { cmd: 'update', version: api.runtime.getManifest().version });
+    } catch (e) {
+      return { ok: false, needsHelper: true, message: 'The updater is not set up yet. Double-click "Install CreatorSpot" or "Update CreatorSpot" in your CreatorSpot folder once.' };
+    }
+    if (r && r.ok && r.updated) {
+      await local.set({ updateMeta: { checkedAt: 0, justUpdatedTo: r.version } });
+      setTimeout(() => api.runtime.reload(), 400);
+    }
+    return r || { ok: false, message: 'The updater did not answer.' };
   }
 
   // Check for profile changes every minute, even when no pages are loading.
@@ -353,7 +384,7 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
     if (!fromExtension) return false;
     // Account actions only come from CreatorSpot's own pages (dashboard, popup), never from content scripts.
     const fromOwnPage = typeof sender.url === 'string' && sender.url.startsWith(api.runtime.getURL(''));
-    if (['sign-in', 'sign-out', 'cloud-save', 'admin-list', 'admin-hide'].includes(msg.type) && !fromOwnPage) return false;
+    if (['sign-in', 'sign-out', 'cloud-save', 'admin-list', 'admin-hide', 'update-now'].includes(msg.type) && !fromOwnPage) return false;
 
     const respond = (p) => { // p: () => Promise
       ready.then(p).then(reply, (e) => reply({ error: String((e && e.message) || e) }));
@@ -401,6 +432,8 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
         return respond(() => adminList().then((list) => ({ ok: true, list }), (e) => ({ ok: false, message: String((e && e.message) || e) })));
       case 'admin-hide':
         return respond(() => adminHide(String(msg.cloudId || ''), msg.value).then((r) => r, (e) => ({ ok: false, message: String((e && e.message) || e) })));
+      case 'update-now':
+        return respond(() => checkForUpdate(true, true).then(() => installUpdate()));
       case 'sync-soon':
         return respond(() => syncCloud('now'));
       case 'sync-now':

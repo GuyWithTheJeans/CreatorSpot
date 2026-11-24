@@ -22,6 +22,9 @@ if (-not (Test-Path (Join-Path $folder 'manifest.json'))) {
   exit
 }
 
+# Set up automatic updates (registers the CreatorSpot updater helper for this user; no admin needed).
+try { & (Join-Path $folder 'register-updater.ps1') -Folder $folder } catch { }
+
 # CreatorSpot colors (same as the dashboard's dark theme).
 function RGB($r, $g, $b) { [System.Drawing.Color]::FromArgb($r, $g, $b) }
 $cBg = RGB 13 13 20; $cSurface = RGB 22 22 31; $cSurface2 = RGB 30 30 42; $cBorder = RGB 42 42 57
@@ -137,6 +140,14 @@ $status = New-Label 370 678 506 30 $fSmall $cGreen
 $back = New-Button 'Back' 556 716 150 'plain'
 $next = New-Button 'Next' 726 716 150 'primary'
 
+# Last step: "Buy us a doughnut" (GuyWithTheJeans' Streamlabs tip page).
+$donut = New-Object System.Windows.Forms.LinkLabel
+$donut.Text = 'Enjoying CreatorSpot? Buy us a doughnut'
+$donut.Font = $fBtn; $donut.LinkColor = $cPink; $donut.ActiveLinkColor = $cInk; $donut.BackColor = [System.Drawing.Color]::Transparent
+$donut.Location = New-Object System.Drawing.Point(24, 728); $donut.Size = New-Object System.Drawing.Size(500, 30)
+$donut.Add_LinkClicked({ Start-Process 'https://streamlabs.com/guywiththejeans/tip' })
+$form.Controls.Add($donut)
+
 function Copy-Text($value, $message) {
   [System.Windows.Forms.Clipboard]::SetText($value)
   $status.Text = $message
@@ -160,8 +171,8 @@ $steps = @(
      text = { 'Click the puzzle piece at the top right of your browser, then click the pin next to CreatorSpot. Now its icon is always one click away.' } },
   @{ title = 'Streamers: sign in with Twitch'; img = '08-sign-in.png'
      text = { 'Just watching? You are done! Skip this step.' + "`n" + 'Streamers: click the CreatorSpot icon, then "Open dashboard" > "Creators" > "Sign in with Twitch". Then "Edit my profile" to add your links and promos.' } },
-  @{ title = 'All done!'; img = '10-reload.png'
-     text = { 'CreatorSpot is working. Visit any site with ads to see creator promos.' + "`n" + 'New version? The CreatorSpot popup tells you. Double-click "Update CreatorSpot" in this folder, then click the circle arrow (shown above).' } }
+  @{ title = 'All done!'; img = '06-installed.png'
+     text = { 'CreatorSpot is working. Visit any site with ads to see creator promos.' + "`n" + 'Updates install themselves. Leave Developer mode ON and keep this folder on your Desktop, and you will never have to reinstall.' } }
 )
 
 $script:i = 0
@@ -181,6 +192,7 @@ function Show-Step {
     if ($pic.Image) { $pic.Image.Dispose(); $pic.Image = $null }
     if (Test-Path $file) { $pic.Image = [System.Drawing.Image]::FromFile($file) }
   }
+  $donut.Visible = $script:i -eq $steps.Count - 1
   $action.Visible = [bool]$s.action
   if ($s.action) { $action.Text = $s.action }
   $back.Enabled = $script:i -gt 0

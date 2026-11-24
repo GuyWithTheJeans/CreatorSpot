@@ -31,3 +31,8 @@ body { width: 360px; min-height: 420px; background: var(--bg); }
 
 .pop-foot { display: flex; gap: 8px; padding: 12px 16px 16px; }
 body.disabled .pop-main > section:not(.status) { opacity: .5; pointer-events: none; }
+
+/* "Buy us a doughnut" support link */
+.pop-donut { display: block; text-align: center; padding: 0 16px 14px; margin-top: -4px; font-size: var(--t-xs); color: var(--text-3); text-decoration: none; }
+.pop-donut span { font-weight: 600; background: var(--brand-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pop-donut:hover span { text-decoration: underline; text-decoration-color: var(--brand-2); }
