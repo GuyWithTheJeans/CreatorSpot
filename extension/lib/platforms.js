@@ -133,6 +133,25 @@
     },
   };
 
+  /** TikTok background videos: IDs from pasted video links, and TikTok's official embed player. */
+  CS.tiktok = {
+    /** "https://www.tiktok.com/@name/video/7312345678901234567?..." (or just the number) -> "7312345678901234567" */
+    idFrom(text) {
+      const s = String(text || '').trim();
+      const m = s.match(/tiktok\.com\/(?:@[^/\s]+\/video|embed(?:\/v2)?|player\/v1)\/(\d{10,25})/i) || s.match(/^(\d{10,25})$/);
+      return m ? m[1] : null;
+    },
+    ids(list) {
+      return [...new Set((Array.isArray(list) ? list : []).map((x) => CS.tiktok.idFrom(x)).filter(Boolean))].slice(0, 10);
+    },
+    playerUrl(id) {
+      return 'https://www.tiktok.com/player/v1/' + encodeURIComponent(id) +
+        '?autoplay=1&muted=1&loop=1&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0' +
+        '&timestamp=0&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0';
+    },
+    videoUrl: (id) => 'https://www.tiktok.com/video/' + encodeURIComponent(id),
+  };
+
   CS.platforms = {
     all: () => Object.values(PLATFORMS),
     get: (id) => PLATFORMS[id] || PLATFORMS.website,

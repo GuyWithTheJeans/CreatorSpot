@@ -67,6 +67,7 @@
     const gen = generation;
     const shownOnPage = mounted.map((m) => m.creatorId);
     const payload = await send({ type: 'promo', size: { w: p.w, h: p.h }, shownOnPage });
+    if (payload && payload.tiktok && mounted.filter((m) => m.tiktok).length >= 2) payload.tiktok = null;
     if (gen !== generation) return;
     if (!payload || !document.contains(p.el)) {
       p.el.setAttribute(ATTR, 'skip');
@@ -80,7 +81,7 @@
       p.el.setAttribute(ATTR, 'beside');
       p.el.parentElement.insertBefore(el, p.el);
     }
-    const m = { host: el, target: p.el, mode: p.mode, creatorId: payload.creator.id, campaignId: payload.campaign.id, name: payload.creator.name };
+    const m = { host: el, target: p.el, mode: p.mode, creatorId: payload.creator.id, campaignId: payload.campaign.id, name: payload.creator.name, tiktok: !!payload.tiktok };
     m.view = CS.render.mount(el, payload, { w: p.w, h: p.h });
     bindClicks(m);
     trackImpression(m);

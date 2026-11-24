@@ -200,6 +200,14 @@
   }
 
   init();
-  // Opening the popup fetches any profile changes right away.
+  // Opening the popup fetches any profile changes right away, and checks for a new version.
   api.runtime.sendMessage({ type: 'sync-soon' }).catch(() => null);
+  api.runtime.sendMessage({ type: 'update-check' }).then(() => renderUpdate()).catch(() => null);
+  api.runtime.sendMessage({ type: 'updater-status' }).then((s) => {
+    if (!s || s.ok || !s.supported) return;
+    const box = $('#update');
+    if (!box.classList.contains('hidden')) return; // the update banner already explains what to do
+    box.classList.remove('hidden');
+    box.innerHTML = '<strong>Automatic updates are off.</strong> To turn them on, double-click <b>Install CreatorSpot</b> in your CreatorSpot folder once.';
+  }).catch(() => null);
 })();

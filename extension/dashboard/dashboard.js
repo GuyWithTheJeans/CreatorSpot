@@ -547,7 +547,7 @@
     if (!S.creators.length) return ui.toast('Add a creator before creating a campaign.', true);
     const cp = existing
       ? JSON.parse(JSON.stringify(existing))
-      : { id: '', creatorId: presetCreator || (S.creators.find((c) => c.isOwn) || S.creators.find((c) => !synced(c)) || S.creators[0]).id, name: '', headline: '', message: '', cta: '', format: 'spotlight', platformIndex: 0, priority: 3, enabled: true, schedule: { start: '', end: '', days: [] }, media: {} };
+      : { id: '', creatorId: presetCreator || (S.creators.find((c) => c.isOwn) || S.creators.find((c) => !synced(c)) || S.creators[0]).id, name: '', headline: '', message: '', cta: '', format: 'spotlight', platformIndex: 0, priority: 3, enabled: true, schedule: { start: '', end: '', days: [] }, media: {}, tiktok: [] };
     let size = SIZES[0];
 
     const creatorOpts = S.creators.filter((c) => !synced(c) || mine(c) || c.id === cp.creatorId).map((c) => '<option value="' + esc(c.id) + '"' + (c.id === cp.creatorId ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('');
@@ -570,6 +570,8 @@
       '<div class="field"><span>Format</span><div class="format-grid" role="radiogroup" aria-label="Format" id="formats">' + formatCards + '</div><span class="hint" id="formatHint"></span></div>' +
       '<div class="form-grid">' +
       '<div class="field"><span>Background image</span><div class="upload"><label class="btn sm">' + ui.icon('upload') + 'Upload<input type="file" accept="image/png,image/jpeg,image/webp" id="imgFile"></label><button type="button" class="btn sm ghost" id="imgClear">Remove</button><span class="subtle" id="imgName"></span></div><span class="hint">Optional. Used behind your text. Wide images look best.</span></div>' +
+      '<label class="field full">Background TikTok videos<textarea class="input" name="tiktok" rows="3" placeholder="https://www.tiktok.com/@yourname/video/7312345678901234567">' + esc((cp.tiktok || []).map(CS.tiktok.videoUrl).join('\n')) + '</textarea>' +
+      '<span class="hint">Paste links to your TikToks, one per line (up to 10). Each promo plays one of them behind your design, muted, with a sound button. On TikTok: open the video, click <b>Share</b>, then <b>Copy link</b>.</span><span class="error-text hidden" data-err="tiktok"></span></label>' +
       '<div class="field" id="videoField"><span>Promotional video</span><div class="upload"><label class="btn sm">' + ui.icon('upload') + 'Upload<input type="file" accept="video/mp4,video/webm" id="vidFile"></label><button type="button" class="btn sm ghost" id="vidClear">Remove</button><span class="subtle" id="vidName"></span></div><span class="hint">MP4 or WebM, up to 8 MB. Plays muted and on a loop.</span></div>' +
       '<label class="field">Priority<select class="input" name="priority">' + prioOpts + '</select><span class="hint">How often this campaign is used compared with this creator’s other campaigns.</span></label>' +
       '<div class="toggle-line" style="align-self:start"><div><div class="title">Enabled</div><div class="desc">Paused campaigns are never shown.</div></div><label class="switch"><input type="checkbox" name="enabled"' + (cp.enabled ? ' checked' : '') + '><span></span></label></div>' +
@@ -597,7 +599,10 @@
         cp.platformIndex = Number($('[name=platformIndex]', body).value) || 0;
         cp.priority = Number($('[name=priority]', body).value);
         cp.enabled = $('[name=enabled]', body).checked;
-        cp.schedule = { start: $('[name=start]', body).value, end: $('[name=end]', body).value, days: $$('#days input:checked', body).map((i) => Number(i.value)) };
+        cp.schedule = { start: $('[name=start]', body).value, end: $('[name=end]', body).value, days: $('#days input:checked', body).map((i) => Number(i.value)) };
+        const ttLines = $('[name=tiktok]', body).value.split(/\s+/).map((x) => x.trim()).filter(Boolean);
+        cp.tiktok = CS.tiktok.ids(ttLines);
+        cp.tiktokBad = ttLines.filter((x) => !CS.tiktok.idFrom(x));
       };
       const formatHint = () => {
         const hints = {
@@ -669,6 +674,8 @@
         if (msg) valid = false;
       };
       setErr('headline', cp.headline ? '' : 'Add a headline. It is the main line viewers read.');
+      setErr('tiktok', cp.tiktokBad && cp.tiktokBad.length ? 'These are not TikTok video links: ' + cp.tiktokBad.slice(0, 2).join(', ') + '. Use the full link from Share > Copy link on tiktok.com (short vm.tiktok.com links do not work).' : '');
+      delete cp.tiktokBad;
       setErr('dates', cp.schedule.start && cp.schedule.end && cp.schedule.end < cp.schedule.start ? 'The end date must be after the start date.' : '');
       if (!valid) return false;
       cp.name = cp.name || cp.headline;
@@ -915,6 +922,7 @@
       '</div>' +
       '<div class="card"><div class="card-title"><h3>Ads and websites</h3></div>' +
       toggle('blockAdRequests', 'Stop ad networks from loading', 'Extra privacy: ads are never downloaded. Some sites then collapse their ad slots, so fewer promotions appear. When this is off, ads may still load but stay hidden and are never recorded as viewed.', s.blockAdRequests) +
+      toggle('tiktokVideos', 'Play creators\u2019 TikTok videos', 'Promos can play one of the creator\u2019s TikToks in the background, muted, with a button to turn the sound on. This loads TikTok\u2019s own player from tiktok.com.', s.tiktokVideos) +
       toggle('youtubeCompanion', 'YouTube companion card', 'While YouTube plays a video ad, show a creator card next to the player. The video ad itself is not changed.', s.youtubeCompanion) +
       '<div class="setting"><div><div class="title">Ad-blocker compatibility</div><div class="desc">For browsers that hide ad slots themselves, such as Brave. “Automatic” turns this on in Brave only.</div></div>' +
       '<select class="input" id="compatMode" style="width:auto">' + [['auto', 'Automatic'], ['on', 'On'], ['off', 'Off']].map(([v, l]) => '<option value="' + v + '"' + (s.compatMode === v ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></div>' +
@@ -939,7 +947,7 @@
       await reload();
       ui.toast(msg || 'Settings saved.');
     };
-    ['enabled', 'animations', 'blockAdRequests', 'youtubeCompanion'].forEach((id) => $('#' + id).addEventListener('change', (e) => save({ [id]: e.target.checked })));
+    ['enabled', 'animations', 'blockAdRequests', 'youtubeCompanion', 'tiktokVideos'].forEach((id) => $('#' + id).addEventListener('change', (e) => save({ [id]: e.target.checked })));
     $('#compatMode').addEventListener('change', (e) => save({ compatMode: e.target.value }));
     $('#theme').addEventListener('click', async (e) => {
       const b = e.target.closest('[data-theme]');

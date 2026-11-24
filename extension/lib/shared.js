@@ -1,5 +1,5 @@
 /* GitHub: where new versions of CreatorSpot are published. Every install checks the version number there
- * every hour and shows an "update available" message. (Creator profiles sync through accounts: lib/cloud.js.) */
+ * every 10 minutes (and whenever the popup opens) and installs new versions automatically. (Creator profiles sync through accounts: lib/cloud.js.) */
 (function (root) {
   'use strict';
   const CS = root.CreatorSpot;
@@ -9,7 +9,7 @@
   const BRANCH = 'main';
 
   const shared = {
-    UPDATE_EVERY_MS: 60 * 60 * 1000,
+    UPDATE_EVERY_MS: 10 * 60 * 1000,
     configured: () => !/^OWNER\//.test(CS.GITHUB_REPO),
     rawUrl: (file) => 'https://raw.githubusercontent.com/' + CS.GITHUB_REPO + '/' + BRANCH + '/' + file,
     manifestUrl: () => shared.rawUrl('extension/manifest.json'),

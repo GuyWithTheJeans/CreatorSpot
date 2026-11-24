@@ -432,6 +432,18 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
         return respond(() => adminList().then((list) => ({ ok: true, list }), (e) => ({ ok: false, message: String((e && e.message) || e) })));
       case 'admin-hide':
         return respond(() => adminHide(String(msg.cloudId || ''), msg.value).then((r) => r, (e) => ({ ok: false, message: String((e && e.message) || e) })));
+      case 'update-check':
+        return respond(() => checkForUpdate(true).then((update) => ({ update })));
+      case 'updater-status':
+        return respond(async () => {
+          if (!api.runtime.sendNativeMessage) return { ok: false, supported: false };
+          try {
+            const r = await api.runtime.sendNativeMessage(UPDATER, { cmd: 'ping' });
+            return { ok: !!(r && r.ok), supported: true };
+          } catch (e) {
+            return { ok: false, supported: true };
+          }
+        });
       case 'update-now':
         return respond(() => checkForUpdate(true, true).then(() => installUpdate()));
       case 'sync-soon':

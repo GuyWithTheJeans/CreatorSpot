@@ -43,6 +43,24 @@ const zip = path.join(work, 'zip', 'CreatorSpot-for-Chrome.zip');
 execFileSync('powershell.exe', ['-NoProfile', '-Command', `Compress-Archive -Path '${path.dirname(stage)}\\*' -DestinationPath '${zip}'`]);
 
 console.log('=== ' + browser.toUpperCase() + ' ===');
+// Remember where the updater points now (the user's real install), and put it back afterwards.
+const KEYS = ['Google\\Chrome', 'BraveSoftware\\Brave-Browser', 'Microsoft\\Edge', 'Chromium'];
+const saved = {};
+for (const k of KEYS) {
+  try {
+    saved[k] = execFileSync('powershell.exe', ['-NoProfile', '-Command', `(Get-Item 'HKCU:\\Software\\${k}\\NativeMessagingHosts\\com.creatorspot.updater' -ErrorAction Stop).GetValue('')`], { encoding: 'utf8' }).trim();
+  } catch (e) {
+    saved[k] = '';
+  }
+}
+const restore = () => {
+  for (const k of KEYS) {
+    const key = `HKCU:\\Software\\${k}\\NativeMessagingHosts\\com.creatorspot.updater`;
+    const cmd = saved[k] ? `New-Item -Path '${key}' -Value '${saved[k]}' -Force | Out-Null` : `Remove-Item -Path '${key}' -Force -ErrorAction SilentlyContinue`;
+    try { execFileSync('powershell.exe', ['-NoProfile', '-Command', cmd]); } catch (e) { /* keep going */ }
+  }
+};
+process.on('exit', restore);
 ps(path.join(installed, 'register-updater.ps1'), ['-Folder', installed]);
 process.env.CS_UPDATE_ZIP = zip; // the browser (and so the updater helper) inherits this
 const b = await launch(BROWSERS[browser]);
@@ -87,9 +105,7 @@ try {
 } finally {
   await b.close();
   delete process.env.CS_UPDATE_ZIP;
-  // Point the updater back at the real install on the Desktop, if there is one.
-  const real = path.join(os.homedir(), 'Desktop', 'CreatorSpot');
-  if (existsSync(path.join(real, 'register-updater.ps1'))) ps(path.join(real, 'register-updater.ps1'), ['-Folder', real]);
+  restore();
   rmSync(work, { recursive: true, force: true });
 }
 console.log(failed ? failed + ' failed' : 'One-click update works');

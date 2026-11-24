@@ -102,3 +102,18 @@ test('version comparison for the update check', () => {
   assert.strictEqual(CS.shared.compareVersions('v0.2.0', '0.2.0'), 0);
   assert.strictEqual(CS.shared.compareVersions('0.1.2', '0.1.3'), -1);
 });
+
+test('TikTok background videos: links become IDs, are validated, and sync with the campaign', () => {
+  const { CS } = load();
+  const cp = CS.schema.campaign({ id: 'cp_t', creatorId: 'cr_1', headline: 'H', tiktok: ['https://www.tiktok.com/@imdoughnutdude/video/7312345678901234567?is_from_webapp=1', 'not a link', '7300000000000000001', '7300000000000000001'] }, ['cr_1']);
+  assert.deepStrictEqual(cp.tiktok, ['7312345678901234567', '7300000000000000001']);
+  const me = CS.schema.creator({ id: 'cr_1', name: 'D', platforms: [{ type: 'tiktok', url: 'https://www.tiktok.com/@imdoughnutdude' }] });
+  const body = CS.cloud.toRemote(me, [cp], () => null);
+  assert.deepStrictEqual(body.campaigns[0].tiktok, cp.tiktok);
+  const back = CS.cloud.toLocal([{ id: '33333333-3333-3333-3333-333333333333', twitch_login: 'x', featured: false, name: 'D', platforms: me.platforms, campaigns: body.campaigns }]);
+  assert.deepStrictEqual(back.campaigns[0].tiktok, cp.tiktok);
+  assert.match(CS.tiktok.playerUrl('7312345678901234567'), /^https:\/\/www\.tiktok\.com\/player\/v1\/7312345678901234567\?autoplay=1&muted=1&loop=1/);
+  // The setting turns them off, and the promo design only includes the player when a video is chosen.
+  assert.strictEqual(CS.schema.settings({}).tiktokVideos, true);
+  assert.strictEqual(CS.schema.settings({ tiktokVideos: false }).tiktokVideos, false);
+});

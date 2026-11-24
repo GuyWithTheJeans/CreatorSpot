@@ -35,6 +35,9 @@
       },
       platform: { type: platform.type, url: CS.safeUrl(platform.url), handle: platform.handle },
       live: live && live.live ? live : null,
+      tiktok: settings.tiktokVideos !== false && Array.isArray(campaign.tiktok) && campaign.tiktok.length
+        ? campaign.tiktok[Math.floor(Math.random() * campaign.tiktok.length)]
+        : null,
       animations: settings.animations !== false,
     };
   };

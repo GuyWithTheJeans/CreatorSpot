@@ -42,6 +42,7 @@
       youtubeCompanion: true,
       compatMode: 'auto',
       animations: true,
+      tiktokVideos: true,
       showLabel: true,
       disabledSites: [],
       integrations: { twitch: { clientId: '', token: '' } },

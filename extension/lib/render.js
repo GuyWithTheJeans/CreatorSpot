@@ -42,6 +42,24 @@
 .bg-img { background-size: cover; background-position: center; }
 video.bg-video { width: 100%; height: 100%; object-fit: cover; }
 .shade { background: linear-gradient(180deg, rgba(8,8,14,.15) 0%, rgba(8,8,14,.55) 45%, rgba(8,8,14,.92) 100%); }
+/* TikTok background video: TikTok's official player fills the slot (it blurs the edges itself), CreatorSpot's design
+   sits on top through a see-through layer. Hidden until the player says it is ready, so a blocked player shows nothing. */
+iframe.bg-tiktok { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; z-index: -1; pointer-events: none;
+  opacity: 0; transition: opacity .6s ease; background: transparent; }
+.tt-ready iframe.bg-tiktok { opacity: 1; }
+.tt-shade { position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity .6s ease;
+  background: linear-gradient(90deg, rgba(8,8,14,.9) 0%, rgba(8,8,14,.6) 38%, rgba(8,8,14,.28) 58%, rgba(8,8,14,.72) 100%); }
+.tall .tt-shade, .card .tt-shade { background: linear-gradient(180deg, rgba(8,8,14,.30) 0%, rgba(8,8,14,.55) 45%, rgba(8,8,14,.90) 100%); }
+.tt-ready .tt-shade { opacity: 1; }
+.tt-ready .bg { opacity: 0; transition: opacity .6s ease; }
+.horn { position: absolute; right: 8px; bottom: 8px; z-index: 3; width: 30px; height: 30px; border-radius: 50%;
+  display: none; place-items: center; cursor: pointer; color: #fff; background: rgba(8,8,14,.62);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); transition: transform .15s ease, background .15s ease; }
+.horn:hover { transform: scale(1.08); background: color-mix(in srgb, var(--accent) 70%, #000); }
+.horn svg { width: 16px; height: 16px; }
+.tt-ready .horn { display: grid; }
+.strip .horn { top: 6px; bottom: auto; right: 6px; width: 24px; height: 24px; }
+.strip-sm .horn { width: 20px; height: 20px; top: 50%; transform: translateY(-50%); right: 4px; }
 
 .content { position: relative; height: 100%; display: flex; gap: clamp(8px, 4cqmin, 18px);
   padding: clamp(10px, 6cqmin, 24px); }
@@ -177,6 +195,10 @@ video.bg-video { width: 100%; height: 100%; object-fit: cover; }
 
   const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.2 5.3 19.9 12l-6.7 6.7-1.4-1.4 4.3-4.3H4v-2h12.1l-4.3-4.3 1.4-1.4Z"/></svg>';
 
+  // Sound icons for the TikTok "unmute" horn.
+  const HORN_OFF = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3Zm13.6 3 2.7-2.7-1.4-1.4-2.7 2.7-2.7-2.7-1.4 1.4 2.7 2.7-2.7 2.7 1.4 1.4 2.7-2.7 2.7 2.7 1.4-1.4-2.7-2.7Z"/></svg>';
+  const HORN_ON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3Zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z"/></svg>';
+
   /** Build the promotion markup. `p` is the payload produced by the background service. */
   function html(p, w, h) {
     const layout = layoutFor(w, h);
@@ -202,10 +224,17 @@ video.bg-video { width: 100%; height: 100%; object-fit: cover; }
       : '<span class="mono">' + esc(CS.initials(p.creator.name)) + '</span>';
 
     let media = '<div class="bg"></div>';
+    const tiktok = p.tiktok && /^\d{10,25}$/.test(p.tiktok) ? p.tiktok : null;
     if (format === 'video') media = '<video class="bg-video" muted loop playsinline preload="metadata" src="' + esc(p.campaign.videoUrl) + '"></video><div class="shade"></div>';
     else if (p.campaign.imageUrl) media = '<div class="bg"></div><div class="bg-img" style="background-image:url(&quot;' + esc(p.campaign.imageUrl) + '&quot;)"></div><div class="shade"></div>';
+    if (tiktok) {
+      media =
+        '<div class="bg"></div><iframe class="bg-tiktok" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true" title="TikTok video" src="' +
+        esc(CS.tiktok.playerUrl(tiktok)) + '"></iframe><div class="tt-shade"></div>' +
+        '<span class="horn" role="button" tabindex="0" aria-label="Turn sound on" title="Turn sound on">' + HORN_OFF + '</span>';
+    }
 
-    const classes = ['cs', 'f-' + format, layout, isLive ? 'is-live' : '', p.animations ? 'anim' : ''].join(' ');
+    const classes = ['cs', 'f-' + format, layout, isLive ? 'is-live' : '', p.animations ? 'anim' : '', tiktok ? 'has-tiktok' : ''].join(' ');
     const label = p.label || 'Creator promo · CreatorSpot';
     const aria = p.creator.name + ' on ' + plat.label + '. ' + (headline || '') + ' ' + label;
 
@@ -249,6 +278,76 @@ video.bg-video { width: 100%; height: 100%; object-fit: cover; }
     if (over()) name.classList.add('wrap');
   }
 
+  /**
+   * TikTok background: talk to TikTok's official player with its postMessage API. Start it muted as soon as it is
+   * ready, fade it in only then (if a site or blocker stops TikTok, the normal design simply stays), and let the
+   * horn turn sound on and off without opening the link.
+   */
+  function wireTikTok(shadow) {
+    const frame = shadow.querySelector('iframe.bg-tiktok');
+    if (!frame) return;
+    const card = shadow.querySelector('.cs');
+    const horn = shadow.querySelector('.horn');
+    let muted = true;
+    const send = (type) => {
+      try {
+        frame.contentWindow.postMessage({ 'x-tiktok-player': true, type }, 'https://www.tiktok.com');
+      } catch (e) {
+        /* frame gone */
+      }
+    };
+    const onMessage = (e) => {
+      if (e.source !== frame.contentWindow || e.origin !== 'https://www.tiktok.com') return;
+      let data = e.data;
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (err) {
+          return;
+        }
+      }
+      if (!data || !data['x-tiktok-player']) return;
+      if (data.type === 'onPlayerReady') {
+        send('mute');
+        send('play');
+      }
+      if (data.type === 'onStateChange' && data.value === 1) card.classList.add('tt-ready');
+      if (data.type === 'onCurrentTime') card.classList.add('tt-ready');
+    };
+    root.addEventListener('message', onMessage);
+    // If the video has not started (for example the tab was in the background), nudge it when it comes into view.
+    if ('IntersectionObserver' in root) {
+      const nudge = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting) && !card.classList.contains('tt-ready')) {
+          send('mute');
+          send('play');
+        }
+      });
+      nudge.observe(card);
+    }
+    // Stop listening once this promo is removed from the page.
+    const gone = new MutationObserver(() => {
+      if (!frame.isConnected) {
+        root.removeEventListener('message', onMessage);
+        gone.disconnect();
+      }
+    });
+    gone.observe(shadow, { childList: true, subtree: true });
+    const toggle = (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // the horn is not a click on the promo
+      muted = !muted;
+      send(muted ? 'mute' : 'unMute');
+      send('play');
+      horn.innerHTML = muted ? HORN_OFF : HORN_ON;
+      horn.setAttribute('aria-label', muted ? 'Turn sound on' : 'Turn sound off');
+      horn.title = horn.getAttribute('aria-label');
+    };
+    horn.addEventListener('click', toggle);
+    horn.addEventListener('keydown', (e) => (e.key === 'Enter' || e.key === ' ') && toggle(e));
+    horn.addEventListener('auxclick', (e) => e.stopPropagation());
+  }
+
   /** Render into a host element. Returns {shadow, relayout(w,h)}. */
   function mount(host, payload, size) {
     const shadow = host.shadowRoot || host.attachShadow({ mode: 'open' });
@@ -266,6 +365,7 @@ video.bg-video { width: 100%; height: 100%; object-fit: cover; }
           img.replaceWith(mono);
         });
       }
+      wireTikTok(shadow);
       const video = shadow.querySelector('video');
       if (videoObserver) videoObserver.disconnect();
       if (video && 'IntersectionObserver' in root) {

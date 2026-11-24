@@ -4,7 +4,7 @@ const LIB = path.join(__dirname, '..', 'extension', 'lib');
 
 function load() {
   delete globalThis.CreatorSpot;
-  ['core', 'platforms', 'defaults', 'schema', 'rotation', 'store', 'payload', 'shared', 'cloud'].forEach((f) => {
+  ['core', 'platforms', 'defaults', 'schema', 'rotation', 'store', 'payload', 'shared', 'cloud', 'render'].forEach((f) => {
     const p = path.join(LIB, f + '.js');
     delete require.cache[require.resolve(p)];
     require(p);

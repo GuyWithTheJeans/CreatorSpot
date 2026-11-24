@@ -108,6 +108,7 @@
           schedule: cp.schedule,
           image: (cp.media && cp.media.imageId && urlFor(cp.media.imageId)) || null,
           video: (cp.media && cp.media.videoId && urlFor(cp.media.videoId)) || null,
+          tiktok: cp.tiktok || [],
         })),
       };
     },

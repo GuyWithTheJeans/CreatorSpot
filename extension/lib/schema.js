@@ -64,6 +64,7 @@
           days: Array.isArray(sched.days) ? [...new Set(sched.days.map(Number).filter((d) => d >= 0 && d <= 6))] : [],
         },
         media: { imageId: mediaRef(c.media && c.media.imageId), videoId: mediaRef(c.media && c.media.videoId) },
+        tiktok: CS.tiktok ? CS.tiktok.ids(c.tiktok) : [],
       };
     },
 
@@ -95,6 +96,7 @@
         youtubeCompanion: s.youtubeCompanion !== false,
         compatMode: ['auto', 'on', 'off'].includes(s.compatMode) ? s.compatMode : d.compatMode,
         animations: s.animations !== false,
+        tiktokVideos: s.tiktokVideos !== false,
         showLabel: true, // Disclosure label is always on.
         disabledSites: (Array.isArray(s.disabledSites) ? s.disabledSites : [])
           .map((h) => str(h, 253).toLowerCase())
