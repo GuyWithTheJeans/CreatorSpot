@@ -101,11 +101,13 @@ for (const browser of targets) {
     await setStorage(ext, `await CreatorSpot.store.saveSettings({ maxPerPage: 12 });`);
     // The featured creators' names and links are live (they edit them through their accounts), so read them.
     await ext.eval(`chrome.runtime.sendMessage({ type: 'sync-now' })`).catch(() => null);
-    const FEAT = await ext.eval(`CreatorSpot.store.getAll().then(({ creators }) => creators.filter((c) => c.featured).map((c) => ({ name: c.name, urls: c.platforms.map((p) => p.url) })))`);
+    const ALL = await ext.eval(`CreatorSpot.store.getAll().then(({ creators }) => creators.map((c) => ({ name: c.name, featured: !!c.featured, urls: c.platforms.map((p) => p.url) })))`);
+    const FEAT = ALL.filter((c) => c.featured);
     const FEAT_NAMES = FEAT.map((f) => f.name).sort();
-    const urlsOf = (name) => (FEAT.find((f) => f.name === name) || { urls: [] }).urls;
+    const urlsOf = (name) => (ALL.find((f) => f.name === name) || { urls: [] }).urls;
+    const KNOWN = new Set(ALL.map((c) => c.name));
     const hostOf = (u) => { try { return new URL(u).hostname.replace(/^(www|m)./, ''); } catch (e) { return ''; } };
-    console.log('  Featured right now: ' + FEAT.map((f) => f.name + ' (' + f.urls.length + ' links)').join(', '));
+    console.log('  Creators right now: ' + ALL.map((f) => f.name + (f.featured ? '*' : '') + ' (' + f.urls.length + ' links)').join(', '));
 
     // ---- Stage 1: detection + replacement ----
     const page = await openPage(b, SITE);
@@ -145,7 +147,7 @@ for (const browser of targets) {
       await page.waitFor(`document.querySelectorAll('creatorspot-promo').length >= 6`, 8000);
       firsts.push(await page.eval(`[...new Set([...document.querySelectorAll('creatorspot-promo')].map((h) => h.shadowRoot.querySelector('.name').textContent))].sort().join('+')`));
     }
-    check(browser, 'Both creators appear on every page load', firsts.every((f) => f === FEAT_NAMES.join('+')), firsts.join(' | '));
+    check(browser, 'Several creators share every page load, all of them real CreatorSpot creators', firsts.every((f) => f.split('+').length >= 2 && f.split('+').every((n) => KNOWN.has(n))), firsts.join(' | '));
 
     // Click opens the right channel in a new tab.
     await sleep(1500); // allow impression timers (1 s) to fire

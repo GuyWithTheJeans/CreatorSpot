@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "CreatorSpot",
   "short_name": "CreatorSpot",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Turn web ad slots into promotions for independent creators. Creators sign in with Twitch to share their profile with everyone.",
   "icons": {
     "16": "icons/icon16.png",
@@ -19,20 +19,7 @@
     }
   },
   "background": {
-    "service_worker": "background.js",
-    "scripts": [
-      "lib/core.js",
-      "lib/platforms.js",
-      "lib/defaults.js",
-      "lib/schema.js",
-      "lib/rotation.js",
-      "lib/store.js",
-      "lib/live.js",
-      "lib/payload.js",
-      "lib/shared.js",
-      "lib/cloud.js",
-      "background.js"
-    ]
+    "service_worker": "background.js"
   },
   "options_ui": {
     "page": "dashboard/dashboard.html",
@@ -77,17 +64,6 @@
         "path": "rules/ad_networks.json"
       }
     ]
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "creatorspot@creatorspot.app",
-      "strict_min_version": "121.0",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
-    }
   },
   "host_permissions": [
     "https://static-cdn.jtvnw.net/*"

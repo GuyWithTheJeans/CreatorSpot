@@ -16,6 +16,9 @@ Get-ChildItem $ext | Where-Object { $_.Name -ne '_metadata' } | Copy-Item -Desti
 $helper = Join-Path $PSScriptRoot 'easy-install'
 Copy-Item (Join-Path $helper 'Install CreatorSpot.cmd'), (Join-Path $helper 'install-helper.ps1'), (Join-Path $helper 'Update CreatorSpot.cmd'), (Join-Path $helper 'update-helper.ps1'), (Join-Path $helper 'START HERE (Chrome).txt') -Destination $folder -Force
 
+# Pictures for the install guide window.
+Copy-Item (Join-Path $root 'docs/install/*') (New-Item -ItemType Directory -Force (Join-Path $folder 'guide')) -Force
+
 $zip = Join-Path $dist "CreatorSpot-$version-for-Chrome.zip"
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Add-Type -AssemblyName System.IO.Compression.FileSystem

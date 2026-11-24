@@ -5,4 +5,5 @@ $root = Split-Path $PSScriptRoot -Parent
 New-Item -ItemType Directory -Force $Target | Out-Null
 Get-ChildItem (Join-Path $root 'extension') | Where-Object { $_.Name -ne '_metadata' } | Copy-Item -Destination $Target -Recurse -Force
 Copy-Item -Path (Join-Path $PSScriptRoot 'easy-install\*') -Destination $Target -Force
+Copy-Item (Join-Path $root 'docs/install/*') (New-Item -ItemType Directory -Force (Join-Path $Target 'guide')) -Force
 Write-Output "Ready: $Target"

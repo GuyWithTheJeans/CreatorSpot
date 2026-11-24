@@ -6,11 +6,39 @@ CreatorSpot is a browser extension that turns standard website ad slots into pro
 * Built for **Firefox 121+** from the same code, but not yet tested. See the checklist.
 * No build step and no dependencies. Your browsing never leaves your browser; the only downloads are public creator profiles and the version check.
 
-## Download
+## How to install (about 2 minutes)
 
-**[Download CreatorSpot (ZIP)](https://github.com/GuyWithTheJeans/CreatorSpot/raw/main/downloads/CreatorSpot-for-Chrome.zip)**. It works in Chrome, Brave and Edge. Right-click the ZIP, choose **Extract All** to your Desktop, open the **CreatorSpot** folder and follow **START HERE (Chrome).txt**.
+> **Sorry this takes a few steps!** Right now this is the easiest way to install CreatorSpot: Chrome and Brave only allow one-click installs from the Chrome Web Store. You only do it once, and a pop-up window shows you every click.
 
-To update later, double-click **Update CreatorSpot** in that folder, then click the reload arrow on CreatorSpot in your browser's extensions page. CreatorSpot's popup tells you when a new version is out.
+**Step 1. Download:** **[CreatorSpot (ZIP)](https://github.com/GuyWithTheJeans/CreatorSpot/raw/main/downloads/CreatorSpot-for-Chrome.zip)**. It works in Chrome, Brave and Edge.
+
+**Step 2. Unzip it.** Right-click the ZIP and click **Extract All...**
+
+![Right-click the ZIP, then Extract All](docs/install/01-extract-all.png)
+
+**Step 3.** Click **Browse...**, pick **Desktop**, then click **Extract**.
+
+![Pick Desktop, then Extract](docs/install/02-extract-desktop.png)
+
+**Step 4.** Open the new **CreatorSpot** folder on your Desktop and double-click **Install CreatorSpot**. A window pops up and walks you through the rest, one picture at a time. If Windows asks whether to run it, click **Run** (or **More info**, then **Run anyway**).
+
+<details><summary>Prefer to read the steps here? (same pictures as the pop-up)</summary>
+
+1. Open `chrome://extensions` (Brave: `brave://extensions`, Edge: `edge://extensions`) and turn on **Developer mode**.<br>![Turn on Developer mode](docs/install/03-developer-mode.png)
+2. Click **Load unpacked**.<br>![Click Load unpacked](docs/install/04-load-unpacked.png)
+3. Click **Desktop**, click the **CreatorSpot** folder once, then click **Select Folder**.<br>![Pick the CreatorSpot folder](docs/install/05-pick-folder.png)
+4. CreatorSpot is installed.<br>![CreatorSpot installed](docs/install/06-installed.png)
+5. Pin it: click the puzzle piece, then the pin.<br>![Pin CreatorSpot](docs/install/07-pin.png)
+6. Streamers: open the dashboard, click **Creators**, then **Sign in with Twitch**.<br>![Sign in with Twitch](docs/install/08-sign-in.png)
+7. Then click **Edit my profile** to add your links and promos.<br>![Edit my profile](docs/install/09-edit-profile.png)
+
+</details>
+
+**Updates:** CreatorSpot's popup tells you when a new version is out. Double-click **Update CreatorSpot** in the CreatorSpot folder, then click the circle arrow on CreatorSpot in your extensions page.
+
+![Click the circle arrow to update](docs/install/10-reload.png)
+
+New creators and profile changes show up automatically. You never reinstall for those.
 
 ## Creator accounts
 

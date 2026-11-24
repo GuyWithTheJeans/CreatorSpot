@@ -18,6 +18,15 @@ foreach ($target in 'chromium', 'firefox') {
   if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
   Copy-Item $ext $stage -Recurse
   if (Test-Path (Join-Path $stage '_metadata')) { Remove-Item -Recurse -Force (Join-Path $stage '_metadata') }
+  if ($target -eq 'firefox') {
+    # Firefox needs background scripts and an add-on ID. Chrome shows "Warnings" for these, so only Firefox gets them.
+    $mf = Join-Path $stage 'manifest.json'
+    $m = Get-Content $mf -Raw | ConvertFrom-Json
+    $scripts = @('lib/core.js', 'lib/platforms.js', 'lib/defaults.js', 'lib/schema.js', 'lib/rotation.js', 'lib/store.js', 'lib/live.js', 'lib/payload.js', 'lib/shared.js', 'lib/cloud.js', 'background.js')
+    $m.background = [pscustomobject]@{ scripts = $scripts }
+    $m | Add-Member -NotePropertyName browser_specific_settings -NotePropertyValue ([pscustomobject]@{ gecko = [pscustomobject]@{ id = 'creatorspot@creatorspot.app'; strict_min_version = '121.0'; data_collection_permissions = [pscustomobject]@{ required = @('none') } } }) -Force
+    [System.IO.File]::WriteAllText($mf, ($m | ConvertTo-Json -Depth 10))
+  }
   [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, $zip, [System.IO.Compression.CompressionLevel]::Optimal, $false)
   Remove-Item -Recurse -Force $stage
   Write-Output "Built $zip"

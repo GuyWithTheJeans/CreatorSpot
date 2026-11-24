@@ -8,7 +8,7 @@
   // Both return promises from MV3 APIs, so one code path works everywhere.
   CS.api = root.browser && root.browser.runtime ? root.browser : root.chrome;
 
-  CS.VERSION = '0.2.1';
+  CS.VERSION = '0.2.2';
 
   CS.uid = function uid(prefix) {
     const rand = Math.random().toString(36).slice(2, 8);
