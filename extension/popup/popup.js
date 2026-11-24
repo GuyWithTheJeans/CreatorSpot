@@ -186,4 +186,6 @@
   }
 
   init();
+  // Opening the popup fetches any profile changes right away.
+  api.runtime.sendMessage({ type: 'sync-soon' }).catch(() => null);
 })();

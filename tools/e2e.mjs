@@ -99,6 +99,13 @@ for (const browser of targets) {
     const rulesOn = await ext.eval('chrome.declarativeNetRequest.getEnabledRulesets()');
     check(browser, 'Ad-network ruleset turns on with the setting', rulesOn.includes('ad_networks'), JSON.stringify(rulesOn));
     await setStorage(ext, `await CreatorSpot.store.saveSettings({ maxPerPage: 12 });`);
+    // The featured creators' names and links are live (they edit them through their accounts), so read them.
+    await ext.eval(`chrome.runtime.sendMessage({ type: 'sync-now' })`).catch(() => null);
+    const FEAT = await ext.eval(`CreatorSpot.store.getAll().then(({ creators }) => creators.filter((c) => c.featured).map((c) => ({ name: c.name, urls: c.platforms.map((p) => p.url) })))`);
+    const FEAT_NAMES = FEAT.map((f) => f.name).sort();
+    const urlsOf = (name) => (FEAT.find((f) => f.name === name) || { urls: [] }).urls;
+    const hostOf = (u) => { try { return new URL(u).hostname.replace(/^(www|m)./, ''); } catch (e) { return ''; } };
+    console.log('  Featured right now: ' + FEAT.map((f) => f.name + ' (' + f.urls.length + ' links)').join(', '));
 
     // ---- Stage 1: detection + replacement ----
     const page = await openPage(b, SITE);
@@ -127,9 +134,9 @@ for (const browser of targets) {
 
     // ---- Stage 2: both creators, correct links, rotation ----
     const names = new Set(promos.map((p) => p.name));
-    check(browser, 'Both demo creators displayed', names.has('GuyWithTheJeans') && names.has('iamDoughnutDude'), [...names].join(', '));
-    const linkOk = promos.every((p) => (p.name === 'GuyWithTheJeans' && p.href === 'https://www.twitch.tv/guywiththejeans') || (p.name === 'iamDoughnutDude' && p.href === 'https://www.twitch.tv/iamdoughnutdude'));
-    check(browser, 'Each promotion links to the correct Twitch channel', linkOk);
+    check(browser, 'Both featured creators displayed', FEAT_NAMES.length === 2 && FEAT_NAMES.every((n) => names.has(n)), [...names].join(', '));
+    const linkOk = promos.every((p) => urlsOf(p.name).includes(p.href));
+    check(browser, "Each promotion links to that creator's own channel", linkOk, promos.filter((p) => !urlsOf(p.name).includes(p.href)).map((p) => p.name + ' -> ' + p.href).join(', '));
     const seq = promos.map((p) => p.name);
     check(browser, 'Creators alternate on a page', seq.every((n, i) => i === 0 || n !== seq[i - 1]), seq.join(' → '));
     const firsts = [];
@@ -138,7 +145,7 @@ for (const browser of targets) {
       await page.waitFor(`document.querySelectorAll('creatorspot-promo').length >= 6`, 8000);
       firsts.push(await page.eval(`[...new Set([...document.querySelectorAll('creatorspot-promo')].map((h) => h.shadowRoot.querySelector('.name').textContent))].sort().join('+')`));
     }
-    check(browser, 'Both creators appear on every page load', firsts.every((f) => f === 'GuyWithTheJeans+iamDoughnutDude'), firsts.join(' | '));
+    check(browser, 'Both creators appear on every page load', firsts.every((f) => f === FEAT_NAMES.join('+')), firsts.join(' | '));
 
     // Click opens the right channel in a new tab.
     await sleep(1500); // allow impression timers (1 s) to fire
@@ -150,8 +157,7 @@ for (const browser of targets) {
     for (const type of ['mousePressed', 'mouseReleased']) await page.send('Input.dispatchMouseEvent', { type, x: box2.x, y: box2.y, button: 'left', clickCount: 1 });
     await sleep(2500);
     const opened = created.slice(before).find((t) => t.type === 'page');
-    const expectUrl = box.name === 'GuyWithTheJeans' ? 'https://www.twitch.tv/guywiththejeans' : 'https://www.twitch.tv/iamdoughnutdude';
-    check(browser, 'Clicking opens the creator channel in a new tab', opened && opened.url.startsWith(expectUrl), opened ? opened.url : 'no tab');
+    check(browser, 'Clicking opens the creator channel in a new tab', opened && urlsOf(box.name).some((u) => hostOf(u) === hostOf(opened.url)), opened ? opened.url : 'no tab');
     if (opened) await b.send('Target.closeTarget', { targetId: opened.targetId }).catch(() => {});
 
     const stats = await ext.eval(`CreatorSpot.store.getStats()`);
@@ -178,7 +184,7 @@ for (const browser of targets) {
     promos = await page.eval(COLLECT);
     const swapNames = new Set(promos.map((p) => p.name));
     check(browser, 'A new creator added through settings joins the rotation', promos.some((p) => p.name === 'SwapTestCreator' && p.href === 'https://www.youtube.com/@swaptest'), [...swapNames].join(', '));
-    check(browser, 'Featured creators stay in the rotation', swapNames.has('GuyWithTheJeans') && swapNames.has('iamDoughnutDude'));
+    check(browser, 'Featured creators stay in the rotation', FEAT_NAMES.every((n) => swapNames.has(n)), [...swapNames].join(', '));
 
     await setStorage(ext, `chrome.runtime.sendMessage({ type: 'reset-demo' });`);
     await sleep(500);

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "CreatorSpot",
   "short_name": "CreatorSpot",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Turn web ad slots into promotions for independent creators. Creators sign in with Twitch to share their profile with everyone.",
   "icons": {
     "16": "icons/icon16.png",
@@ -42,7 +42,8 @@
     "storage",
     "unlimitedStorage",
     "declarativeNetRequest",
-    "identity"
+    "identity",
+    "alarms"
   ],
   "optional_host_permissions": [
     "https://api.twitch.tv/*"

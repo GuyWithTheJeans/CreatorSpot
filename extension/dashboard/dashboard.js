@@ -1040,10 +1040,19 @@
     route(true);
   });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => ui.applyTheme(S.settings.theme));
+  // Live updates: when another creator's profile changes (synced in the background), redraw the page,
+  // unless you're in the middle of editing something.
+  let liveTimer = null;
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || $('#editor').open) return;
     if (changes.stats && current === 'analytics') reload().then(renderAnalytics);
+    if ((changes.creators || changes.campaigns || changes.account) && ['overview', 'creators', 'campaigns', 'rotation'].includes(current)) {
+      clearTimeout(liveTimer);
+      liveTimer = setTimeout(() => !$('#editor').open && reload().then(() => route()), 300);
+    }
   });
 
   reload().then(() => route(true));
+  // Opening the dashboard always fetches the latest profiles.
+  api.runtime.sendMessage({ type: 'sync-soon' }).catch(() => null);
 })();

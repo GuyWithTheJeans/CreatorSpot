@@ -127,16 +127,43 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
     }
   }
 
-  async function syncCloud(force) {
-    if (syncing) return syncing;
+  /** A tiny "has anything changed?" fingerprint: newest edit time plus number of visible creators. */
+  async function cloudSignature() {
+    const res = await fetch(C.url + '/rest/v1/profiles?select=updated_at&hidden=eq.false&order=updated_at.desc&limit=1', {
+      headers: { apikey: C.key, Prefer: 'count=exact' },
+      cache: 'no-store',
+      credentials: 'omit',
+    });
+    if (!res.ok) throw new Error('Server answered ' + res.status);
+    const rows = await res.json();
+    return ((rows[0] && rows[0].updated_at) || '') + '|' + (res.headers.get('content-range') || '');
+  }
+
+  /**
+   * mode 'auto': at most once a minute, and only downloads everything when something changed (alarm, page loads).
+   * mode 'now':  right away, but still skips the download when nothing changed (dashboard or popup opened).
+   * mode 'full' (or true): download everything right away (Sync now, after saving, after signing in).
+   */
+  async function syncCloud(mode) {
+    const force = mode === true || mode === 'full';
+    if (syncing) {
+      if (!force) return syncing;
+      await syncing.catch(() => null); // a save must not be answered by an older, in-flight sync
+    }
     syncing = (async () => {
       const { sharedMeta = {}, account = null } = await local.get(['sharedMeta', 'account']);
-      if (!force && sharedMeta.checkedAt && Date.now() - sharedMeta.checkedAt < CS.cloud.SYNC_EVERY_MS) return { ok: true, skipped: true };
+      const ownId = account ? account.localId : null;
+      if (!force && mode !== 'now' && sharedMeta.checkedAt && Date.now() - sharedMeta.checkedAt < CS.cloud.SYNC_EVERY_MS) return { ok: true, skipped: true };
       sharedMeta.checkedAt = Date.now();
       try {
+        const sig = await cloudSignature();
+        if (!force && sig === sharedMeta.sig && ownId === sharedMeta.ownId && sharedMeta.text) {
+          Object.assign(sharedMeta, { ok: true, error: '', syncedAt: Date.now() });
+          await local.set({ sharedMeta });
+          return { ok: true, unchanged: true };
+        }
         const rows = await cloudFetch('/rest/v1/profiles?select=' + CS.cloud.COLUMNS + '&hidden=eq.false&order=created_at.asc&limit=2000');
         const text = JSON.stringify(rows);
-        const ownId = account ? account.localId : null;
         if (force || text !== sharedMeta.text || ownId !== sharedMeta.ownId) {
           const parsed = CS.cloud.toLocal(rows);
           const prev = (await store.sharedProfile()) || {};
@@ -158,6 +185,7 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
           sharedMeta.ownId = ownId;
           sharedMeta.count = parsed.creators.length;
         }
+        sharedMeta.sig = sig;
         Object.assign(sharedMeta, { ok: true, error: '', syncedAt: Date.now() });
         await local.set({ sharedMeta });
         return { ok: true };
@@ -269,8 +297,20 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
     return updateMeta.update || null;
   }
 
+  // Check for profile changes every minute, even when no pages are loading.
+  function ensureAlarm() {
+    if (!api.alarms) return;
+    api.alarms.get('cs-sync').then((a) => a || api.alarms.create('cs-sync', { periodInMinutes: 1 })).catch(() => {});
+  }
+  if (api.alarms) {
+    api.alarms.onAlarm.addListener((a) => {
+      if (a.name === 'cs-sync') ready.then(() => Promise.all([syncCloud('auto'), checkForUpdate(false)])).catch(() => {});
+    });
+  }
+  ensureAlarm();
+
   function backgroundSync() {
-    ready.then(() => Promise.all([syncCloud(false), checkForUpdate(false)])).catch(() => {});
+    ready.then(() => Promise.all([syncCloud('auto'), checkForUpdate(false)])).catch(() => {});
   }
   backgroundSync();
 
@@ -361,8 +401,10 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
         return respond(() => adminList().then((list) => ({ ok: true, list }), (e) => ({ ok: false, message: String((e && e.message) || e) })));
       case 'admin-hide':
         return respond(() => adminHide(String(msg.cloudId || ''), msg.value).then((r) => r, (e) => ({ ok: false, message: String((e && e.message) || e) })));
+      case 'sync-soon':
+        return respond(() => syncCloud('now'));
       case 'sync-now':
-        return respond(() => Promise.all([syncCloud(true), checkForUpdate(true)]).then(([sync, update]) => ({ sync, update })));
+        return respond(() => Promise.all([syncCloud('full'), checkForUpdate(true)]).then(([sync, update]) => ({ sync, update })));
       case 'reset-stats':
         return respond(() => store.resetStats().then(() => true));
       case 'reset-demo':

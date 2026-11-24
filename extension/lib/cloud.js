@@ -18,7 +18,7 @@
   const uuidOk = (v) => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v);
 
   const cloud = {
-    SYNC_EVERY_MS: 3 * 60 * 1000,
+    SYNC_EVERY_MS: 50 * 1000,
     MEDIA_PREFIX,
     COLUMNS: 'id,twitch_login,name,bio,accent,category,avatar_url,platforms,campaigns,featured,updated_at',
 
@@ -94,7 +94,7 @@
         accent: creator.accent,
         category: creator.category || 'Gaming',
         platforms: creator.platforms.map((p) => ({ type: p.type, url: p.url })),
-        avatar_url: creator.avatar ? urlFor(creator.avatar) || null : undefined,
+        avatar_url: creator.avatar ? urlFor(creator.avatar) || undefined : null,
         campaigns: own.map((cp) => ({
           id: cp.id,
           name: cp.name,

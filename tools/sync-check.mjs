@@ -30,6 +30,8 @@ try {
   check('"Sync now" works', r && r.sync && r.sync.ok === true, JSON.stringify(r && r.sync));
   check('Update check answers', r && 'update' in r, JSON.stringify(r && r.update));
 
+  const pics = await ext.eval(`chrome.storage.local.get('creators').then((d) => d.creators.filter((c) => c.cloudId).map((c) => c.name + ':' + (c.avatar ? 'picture' : 'none')))`);
+  check('Signed-up creators arrive with their pictures', pics.length > 0 && pics.every((p) => p.endsWith(':picture')), pics.join(', '));
   const card = await ext.eval(`(document.querySelector('#accountCard') || {}).innerText || ''`);
   check('Creators page offers "Sign in with Twitch"', /Sign in with Twitch/.test(card) || /Signed in as/.test(card), card.replace(/\s+/g, ' ').slice(0, 90));
   const redirect = await ext.eval(`chrome.identity && chrome.identity.getRedirectURL ? chrome.identity.getRedirectURL() : ''`);
