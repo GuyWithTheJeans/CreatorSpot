@@ -1,6 +1,6 @@
 # Builds a ZIP to send to someone who uses Google Chrome (works for Edge/Brave too):
 # a "CreatorSpot" folder with the extension, the install helper and Chrome instructions.
-# Output: dist\CreatorSpot-<version>-for-Chrome.zip, plus a copy on the Desktop for easy sending.
+# Output: dist\CreatorSpot-<version>-for-Chrome.zip and downloads\CreatorSpot-for-Chrome.zip (the GitHub download link).
 # Usage: powershell -ExecutionPolicy Bypass -File tools\make-share-zip.ps1
 $root = Split-Path $PSScriptRoot -Parent
 $ext = Join-Path $root 'extension'
@@ -30,7 +30,6 @@ $downloads = Join-Path $root 'downloads'
 New-Item -ItemType Directory -Force $downloads | Out-Null
 Copy-Item $zip (Join-Path $downloads 'CreatorSpot-for-Chrome.zip') -Force
 
-$desktop = Join-Path ([Environment]::GetFolderPath('Desktop')) (Split-Path $zip -Leaf)
-Copy-Item $zip $desktop -Force
+# Everything stays inside the project folder (no copies on the Desktop). Share the GitHub download link instead.
 Write-Output "Built $zip"
-Write-Output "Copied to $desktop"
+Write-Output "Download link (after git push): https://github.com/GuyWithTheJeans/CreatorSpot/raw/main/downloads/CreatorSpot-for-Chrome.zip"

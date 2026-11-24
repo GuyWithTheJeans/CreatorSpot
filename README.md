@@ -2,11 +2,17 @@
 
 [![Buy us a doughnut](https://img.shields.io/badge/%F0%9F%8D%A9_Buy_us_a_doughnut-Streamlabs-F472B6?style=for-the-badge&labelColor=7C5CFF)](https://streamlabs.com/guywiththejeans1/tip)
 
-CreatorSpot is a browser extension that turns standard website ad slots into promotions for independent creators. Creators can promote themselves, or join a fair rotation in which they promote one another.
+CreatorSpot is a browser extension that turns website ad slots into promotions for independent streamers. Instead of a random ad, you see a labeled "Creator promo" for a real creator, with a link straight to their channel.
 
-* Works in **Chrome, Brave, Edge and Opera** from one package. Tested automatically in Chrome 157, Edge 158 and Brave 1.100.
-* Built for **Firefox 121+** from the same code, but not yet tested. See the checklist.
-* No build step and no dependencies. Your browsing never leaves your browser; the only downloads are public creator profiles and the version check.
+* Works in **Chrome, Brave and Edge**. A Firefox build exists but is untested.
+* **Creators sign in with Twitch.** Their profile, promos, pictures and TikToks show up for everyone who uses CreatorSpot within about a minute.
+* **TikTok backgrounds.** A creator's own TikToks can play behind their promo, muted, with a button to turn the sound on.
+* **Updates install themselves.** No reinstalling.
+* **Private.** CreatorSpot never records or sends what you browse. Viewers never need an account.
+
+Made by [GuyWithTheJeans](https://www.twitch.tv/guywiththejeans) and [iamDoughnutDude](https://www.twitch.tv/iamdoughnutdude).
+
+---
 
 ## How to install (about 2 minutes)
 
@@ -24,6 +30,8 @@ CreatorSpot is a browser extension that turns standard website ad slots into pro
 
 **Step 4.** Open the new **CreatorSpot** folder on your Desktop and double-click **Install CreatorSpot**. A window pops up and walks you through the rest, one picture at a time. If Windows asks whether to run it, click **Run** (or **More info**, then **Run anyway**).
 
+> Tip: opening the ZIP and double-clicking **Install CreatorSpot** inside it also works. It unzips itself to your Desktop first.
+
 <details><summary>Prefer to read the steps here? (same pictures as the pop-up)</summary>
 
 1. Open `chrome://extensions` (Brave: `brave://extensions`, Edge: `edge://extensions`) and turn on **Developer mode**.<br>![Turn on Developer mode](docs/install/03-developer-mode.png)
@@ -36,96 +44,84 @@ CreatorSpot is a browser extension that turns standard website ad slots into pro
 
 </details>
 
-**Updates install themselves.** When a new version comes out, CreatorSpot downloads it and restarts on its own, keeping your sign-in and settings. Leave Developer mode on and keep the CreatorSpot folder where it is. If an update ever gets stuck, click the CreatorSpot icon and press **Update now**.
+### Keeping it working
 
-New creators and profile changes show up automatically. You never reinstall for those.
+* **Keep the CreatorSpot folder where you put it**, and leave **Developer mode on**. The browser runs CreatorSpot from that folder.
+* **Updates install themselves.** CreatorSpot checks for a new version every 10 minutes (and whenever you open its popup), downloads it, and restarts, keeping your sign-in and settings. If an update ever gets stuck, click the CreatorSpot icon and press **Update now**. If the popup says *Automatic updates are off*, double-click **Install CreatorSpot** in your CreatorSpot folder once.
+* New creators and profile changes show up by themselves. You never reinstall for those.
 
-## Creator accounts
+---
 
-Creators open the CreatorSpot dashboard, go to **Creators** and click **Sign in with Twitch**. Their profile, campaigns, pictures and videos then sync to every CreatorSpot within a few minutes. Everyone who signs in joins the creator rotation. GuyWithTheJeans and iamDoughnutDude are featured and can remove abusive profiles.
+## For streamers
 
-Accounts run on [Supabase](https://supabase.com). `supabase/setup.sql` creates the database. Every creator can change only their own profile, enforced by row-level security in the database.
+1. **Sign in:** click the CreatorSpot icon, then **Open dashboard** → **Creators** → **Sign in with Twitch**. Your Twitch name, picture and channel link are filled in for you.
+2. **Edit my profile:** add your bio, color, and more links (YouTube, TikTok, Kick, Discord, a tip page, a website).
+3. **My TikToks:** click **My TikToks** on your card, paste a TikTok link (on tiktok.com: open the video, click **Share**, then **Copy link**) and click **Add**. The video shows up playing so you know it worked. Click **Save my TikToks**, and all your promos play them in the background.
+4. **Campaigns:** each campaign is one promo design: headline, message, button text, style, which link it opens, schedule and priority. A live preview shows it at different ad sizes.
 
-## Install it (the easy way)
+Everything you save shows up for every CreatorSpot user within about a minute. Only you can change your own profile.
 
-1. Open the **CreatorSpot** folder on your Desktop.
-2. Double-click **Install CreatorSpot**. A small window walks you through the rest with two "Copy" buttons.
-
-That's it. The folder also has a **HOW TO INSTALL** note with the same steps.
-
-To give it to a friend, right-click the CreatorSpot folder, choose **Send to → Compressed (zipped) folder**, and send them the ZIP. They unzip it to their Desktop and double-click **Install CreatorSpot**.
-
-To rebuild that Desktop folder after code changes, run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools/make-desktop-install.ps1
-```
-
-A one-click "Add to Brave" button needs the extension to be published on the Chrome Web Store (Brave installs from it). `docs/STORE_LISTING.md` has everything for that submission.
-
-**Firefox (untested):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and select `extension/manifest.json`. Then grant the "Access your data for all websites" permission when Firefox asks; Firefox makes site access optional for MV3 extensions.
-
-### Update to a new version
-
-Replace the contents of the `extension` folder with the new files, then click the **reload** icon on the CreatorSpot card on the extensions page. Settings, creators and statistics are kept.
-
-### Back up or move your setup
-
-Go to Dashboard → Settings → **Export backup**. In another browser, choose **Import backup**. Twitch credentials are never included in backups.
+---
 
 ## How to use it
 
 * **Toolbar popup:** turn CreatorSpot on or off, pause it on the current site, switch the rotation mode, and see who is being promoted.
-* **Dashboard → Creators:** add, edit or remove creator profiles. Each profile can link to Twitch, YouTube, TikTok, Kick, Discord or any website. GuyWithTheJeans and iamDoughnutDude are **featured creators**: they ship with every install and always stay in the rotation in every mode (they cannot be removed, excluded or paused). Anyone can add their own channel, and it rotates alongside them. The featured list lives in one place: `CS.FEATURED_IDS` and `defaultCreators()` in `extension/lib/defaults.js`.
-* **Dashboard → Campaigns:** create promotions (headline, message, button text, format, destination, priority, schedule, background image or video) with a live preview at five ad sizes.
-* **Dashboard → Rotation:** choose *Promote myself*, *Creator rotation*, *Creator circle* or *Mixed*, and set frequency caps. The fairness preview shows the next 12 placements and the expected share for each creator.
-* **Dashboard → Analytics:** displays, clicks and click rate per creator and per campaign, stored on this device. A display only counts when at least half the promotion is visible for one second.
+* **Dashboard → Overview:** what's active right now, displays and clicks.
+* **Dashboard → Creators:** your account, and everyone in the rotation. Creators you add only on this computer can also be edited here. GuyWithTheJeans and iamDoughnutDude are **featured** creators: they're always in the rotation.
+* **Dashboard → Campaigns:** all promo designs as a grid, with previews.
+* **Dashboard → Rotation:** choose *Promote myself*, *Creator rotation*, *Creator circle* or *Mixed*, and set limits. The fairness preview shows who comes next.
+* **Dashboard → Analytics:** displays, clicks and click rate. A display only counts when at least half the promo is visible for one second, and these numbers stay on your computer.
+* **Dashboard → Settings:** theme, TikTok videos on/off, YouTube companion card, paused websites, backup and restore.
+
+## Privacy
+
+CreatorSpot looks at the structure of the pages you visit, only inside your browser, to find ad slots. It never records or sends your browsing. The only things it downloads are public creator profiles (from CreatorSpot's database), new versions (from this GitHub page), creators' pictures, and TikTok's player for promos that include a TikTok, which you can switch off in Settings. The full policy is in the extension's **Privacy policy** link.
+
+## Rules CreatorSpot follows
+
+* Every promo is labeled **"Creator promo · CreatorSpot"**.
+* Video ads inside players (such as YouTube's) are never touched. A creator card may appear next to the player instead.
+* Full-screen pop-up ads are never replaced, and things a website hid on purpose are never shown.
+* No fake views or clicks, ever.
+
+---
 
 ## Developing
 
 ```
-extension/        The extension itself (load this folder)
-  lib/            Shared engine: platforms, rotation, storage, renderer, schema
-  content/        Site adapters, placement detection, page orchestration
-  popup/ dashboard/ onboarding/ ui/   User interface and design system
+extension/        The extension (manifest, background, promo designs, dashboard, popup, welcome tour)
+  lib/            Engine: platforms, rotation, storage, accounts (cloud.js), updates (shared.js), renderer
+  content/        Ad-slot detection and page handling (add new ad types in sites.js)
+tools/            Test runners and build scripts; tools/easy-install/ ships inside the download
 tests/            Unit tests (Node's built-in test runner, no install needed)
-tools/            End-to-end and real-site test runners, icon and package scripts
-test-site/        Local page with realistic ad slots, used by the e2e tests
-docs/             Architecture, checklist, store listing, roadmap
+test-site/        Local page with realistic ad slots, used by the browser tests
+supabase/         Database setup for creator accounts (run setup.sql in Supabase's SQL Editor)
+downloads/        The ZIP served by the download link above
+docs/             Architecture, checklist, roadmap, store listing, install pictures
 ```
 
-Run the unit tests:
+Tests:
 
 ```powershell
 node --test tests/
 ```
 
-Run the end-to-end acceptance tests. These load the real extension into each installed browser, headless:
-
 ```powershell
 node tools/e2e.mjs chrome edge brave
 ```
 
-Other checks:
-
 ```powershell
-node tools/youtube-check.mjs chrome
+node tools/tiktok-check.mjs chrome
 ```
 
 ```powershell
-node tools/real-sites.mjs chrome
+node tools/autoupdate-check.mjs chrome
 ```
 
-Build store ZIP files into `dist/`:
+**Releasing a new version:**
+1. Bump the version in `extension/manifest.json` and `extension/lib/core.js`.
+2. Run the tests.
+3. Run `powershell -ExecutionPolicy Bypass -File tools/make-share-zip.ps1`.
+4. Commit and push. Every install updates itself within about 10 minutes.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File tools/package.ps1
-```
-
-Regenerate the icons:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools/make-icons.ps1
-```
-
-To add a new creator platform, add one entry to `extension/lib/platforms.js`. To support a new website's ad markup, add an adapter to `extension/content/sites.js`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it fits together.

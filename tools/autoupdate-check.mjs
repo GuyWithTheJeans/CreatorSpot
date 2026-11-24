@@ -55,7 +55,11 @@ for (const k of KEYS) {
 }
 const restore = () => {
   for (const k of KEYS) {
+    // Only undo our own change: if the value is no longer the test folder (the user re-installed meanwhile), leave it.
     const key = `HKCU:\\Software\\${k}\\NativeMessagingHosts\\com.creatorspot.updater`;
+    let now = '';
+    try { now = execFileSync('powershell.exe', ['-NoProfile', '-Command', `(Get-Item '${key}' -ErrorAction Stop).GetValue('')`], { encoding: 'utf8' }).trim(); } catch (e) { now = ''; }
+    if (!now.startsWith(installed)) continue;
     const cmd = saved[k] ? `New-Item -Path '${key}' -Value '${saved[k]}' -Force | Out-Null` : `Remove-Item -Path '${key}' -Force -ErrorAction SilentlyContinue`;
     try { execFileSync('powershell.exe', ['-NoProfile', '-Command', cmd]); } catch (e) { /* keep going */ }
   }
