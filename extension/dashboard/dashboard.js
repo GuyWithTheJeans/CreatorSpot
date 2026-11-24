@@ -215,6 +215,7 @@
         : '<div class="subtle">' + camps.length + (camps.length === 1 ? ' campaign' : ' campaigns') + ' · ' + esc(c.category) + '</div>' +
           (mine(c)
             ? '<div class="card-actions"><button class="btn sm primary" data-edit="' + esc(c.id) + '">' + ui.icon('edit') + 'Edit my profile</button>' +
+              tiktokButton(c) +
               '<a class="btn sm" href="#campaigns/new?creator=' + encodeURIComponent(c.id) + '">' + ui.icon('plus') + 'Campaign</a>' +
               '<span class="subtle" style="margin-left:auto">Synced to everyone</span></div>'
             : synced(c)
@@ -222,7 +223,7 @@
               (account && account.featured && !c.featured && c.cloudId
                 ? '<button class="btn sm ghost danger" data-hide="' + esc(c.cloudId) + '" data-name="' + esc(c.name) + '" style="margin-left:auto">' + ui.icon('trash') + 'Remove from CreatorSpot</button>'
                 : '') + '</div>'
-            : '<div class="card-actions"><button class="btn sm" data-edit="' + esc(c.id) + '">' + ui.icon('edit') + 'Edit</button>' +
+            : '<div class="card-actions"><button class="btn sm" data-edit="' + esc(c.id) + '">' + ui.icon('edit') + 'Edit</button>' + tiktokButton(c) +
               '<a class="btn sm" href="#campaigns/new?creator=' + encodeURIComponent(c.id) + '">' + ui.icon('plus') + 'Campaign</a>' +
               '<button class="btn sm ghost danger" data-remove="' + esc(c.id) + '" style="margin-left:auto">' + ui.icon('trash') + 'Remove</button></div>')) +
       '</article>'
@@ -322,6 +323,71 @@
     }, 'Done');
   }
 
+  // ---------- My TikToks: pick the TikToks that play behind a creator's promos ----------
+  const tiktoksOf = (creatorId) => [...new Set(S.campaigns.filter((cp) => cp.creatorId === creatorId).flatMap((cp) => cp.tiktok || []))];
+  function tiktokButton(c) {
+    const n = tiktoksOf(c.id).length;
+    return '<button class="btn sm" data-tiktoks="' + esc(c.id) + '">' + CS.platforms.icon('tiktok', 14) + 'My TikToks' + (n ? ' (' + n + ')' : '') + '</button>';
+  }
+
+  function editTikToks(c) {
+    let ids = tiktoksOf(c.id);
+    const html =
+      '<p class="muted" style="margin-bottom:6px">Pick the TikToks that play behind your promos. They play muted, and viewers can tap a button to turn the sound on.</p>' +
+      '<div class="tt-steps"><span>1. Open a TikTok on tiktok.com</span><span>2. Click <b>Share</b>, then <b>Copy link</b></span><span>3. Paste it here and click <b>Add</b></span></div>' +
+      '<div class="tt-add"><input class="input" id="ttLink" placeholder="https://www.tiktok.com/@yourname/video/7312345678901234567" autocomplete="off"><button type="button" class="btn primary" id="ttAddBtn">' + ui.icon('plus') + 'Add</button></div>' +
+      '<span class="error-text hidden" id="ttErr"></span>' +
+      '<div id="ttList"></div>';
+    openEditor('My TikToks', html, (body) => {
+      const list = $('#ttList', body);
+      const err = $('#ttErr', body);
+      const draw = () => {
+        list.innerHTML = ids.length
+          ? '<div class="tt-grid">' + ids.map((id) =>
+              '<div class="tt-tile"><iframe allow="autoplay; encrypted-media" title="TikTok video" src="' + esc(CS.tiktok.playerUrl(id)) + '"></iframe>' +
+              '<button type="button" class="tt-remove" data-ttremove="' + esc(id) + '" aria-label="Remove this TikTok" title="Remove">\u2715</button></div>').join('') + '</div>'
+          : '<div class="tt-empty">No TikToks yet. Paste a link above and they show up here, playing.</div>';
+      };
+      const add = () => {
+        const input = $('#ttLink', body);
+        const found = input.value.split(/\s+/).filter(Boolean).map((x) => CS.tiktok.idFrom(x));
+        const good = found.filter(Boolean);
+        err.classList.toggle('hidden', good.length > 0 || !input.value.trim());
+        if (!good.length) {
+          if (input.value.trim()) err.textContent = 'That is not a TikTok video link. On tiktok.com, open the video, click Share, then Copy link. (Short vm.tiktok.com links from the phone app do not work. Open the video in your browser instead.)';
+          return;
+        }
+        ids = [...new Set(ids.concat(good))].slice(0, 10);
+        if (ids.length === 10) ui.toast('You can pick up to 10 TikToks.');
+        input.value = '';
+        draw();
+      };
+      $('#ttAddBtn', body).addEventListener('click', add);
+      $('#ttLink', body).addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          add();
+        }
+      });
+      list.addEventListener('click', (e) => {
+        const rm = e.target.closest('[data-ttremove]');
+        if (!rm) return;
+        ids = ids.filter((x) => x !== rm.dataset.ttremove);
+        draw();
+      });
+      draw();
+    }, async () => {
+      let campaigns = S.campaigns.map((cp) => (cp.creatorId === c.id ? Object.assign({}, cp, { tiktok: ids.slice() }) : cp));
+      if (!campaigns.some((cp) => cp.creatorId === c.id)) {
+        campaigns = campaigns.concat({ id: CS.uid('cp'), creatorId: c.id, name: 'My TikToks', headline: 'Come watch me!', message: c.bio || '', format: 'spotlight', platformIndex: 0, priority: 3, enabled: true, schedule: { start: '', end: '', days: [] }, media: {}, tiktok: ids.slice() });
+      }
+      if (!(await persist(S.creators, campaigns))) return false;
+      ui.toast(ids.length ? 'Saved. Your promos now play ' + (ids.length === 1 ? 'this TikTok.' : 'these ' + ids.length + ' TikToks.') : 'Saved. Your promos no longer play TikToks.');
+      await reload();
+      route();
+    }, 'Save my TikToks');
+  }
+
   async function onCreatorAction(e) {
     const hide = e.target.closest('[data-hide]');
     if (hide) {
@@ -333,6 +399,8 @@
       await reload();
       return route();
     }
+    const tt = e.target.closest('[data-tiktoks]');
+    if (tt) return editTikToks(creatorById(tt.dataset.tiktoks));
     const edit = e.target.closest('[data-edit]');
     const remove = e.target.closest('[data-remove]');
     if (edit) editCreator(creatorById(edit.dataset.edit));
@@ -599,7 +667,7 @@
         cp.platformIndex = Number($('[name=platformIndex]', body).value) || 0;
         cp.priority = Number($('[name=priority]', body).value);
         cp.enabled = $('[name=enabled]', body).checked;
-        cp.schedule = { start: $('[name=start]', body).value, end: $('[name=end]', body).value, days: $('#days input:checked', body).map((i) => Number(i.value)) };
+        cp.schedule = { start: $('[name=start]', body).value, end: $('[name=end]', body).value, days: $$('#days input:checked', body).map((i) => Number(i.value)) };
         const ttLines = $('[name=tiktok]', body).value.split(/\s+/).map((x) => x.trim()).filter(Boolean);
         cp.tiktok = CS.tiktok.ids(ttLines);
         cp.tiktokBad = ttLines.filter((x) => !CS.tiktok.idFrom(x));
@@ -912,7 +980,7 @@
     const toggle = (id, title, desc, on) =>
       '<div class="setting"><div><div class="title">' + title + '</div><div class="desc">' + desc + '</div></div><label class="switch"><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + '><span></span></label></div>';
     view.innerHTML =
-      '<div class="page-head"><div><h1>Settings</h1><p class="muted">Everything is stored in this browser. Nothing is sent to CreatorSpot servers.</p></div></div>' +
+      '<div class="page-head"><div><h1>Settings</h1><p class="muted">These settings stay in this browser. Only creator profiles are shared, when a creator signs in.</p></div></div>' +
       '<section class="settings-grid">' +
       '<div class="card"><div class="card-title"><h3>General</h3></div>' +
       toggle('enabled', 'CreatorSpot is on', 'Turn off to stop showing promotions everywhere.', s.enabled) +

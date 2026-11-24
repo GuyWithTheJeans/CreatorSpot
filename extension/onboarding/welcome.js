@@ -73,7 +73,7 @@
     if (n === 3) {
       timers.forEach(clearInterval);
       timers = [];
-      showcase($('#showcase2'), [{ w: 300, h: 250 }]);
+      showcase($('#showcase2'), [{ w: 420, h: 350 }]);
       $('#braveTip').classList.toggle('hidden', !CS.isBrave());
     }
   }
@@ -120,7 +120,7 @@
     mode = data.settings.mode;
     ui.applyTheme(data.settings.theme);
     go(0);
-    showcase($('#showcase'), [{ w: 336, h: 280 }, { w: 468, h: 60 }]);
+    showcase($('#showcase'), [{ w: 480, h: 400 }, { w: 640, h: 90 }]);
 
     $('#obLink').addEventListener('input', (e) => {
       const f = CS.platforms.detect(e.target.value);

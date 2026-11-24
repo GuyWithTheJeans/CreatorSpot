@@ -8,7 +8,7 @@
   // Both return promises from MV3 APIs, so one code path works everywhere.
   CS.api = root.browser && root.browser.runtime ? root.browser : root.chrome;
 
-  CS.VERSION = '0.2.5';
+  CS.VERSION = '0.2.6';
 
   // "Buy us a doughnut": GuyWithTheJeans' Streamlabs tip page, shown as a small support link in the dashboard and popup.
   CS.SUPPORT_URL = 'https://streamlabs.com/guywiththejeans1/tip';

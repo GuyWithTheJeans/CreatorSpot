@@ -43,6 +43,11 @@ try {
     await CreatorSpot.store.saveSettings({ mode: 'self', maxPerPage: 6 });
     return true;
   })()`);
+  // Use the 'My TikToks' window the way a creator would: clear the list, paste the link, Add, Save.
+  await ext.eval(`CreatorSpot.store.saveProfiles((await CreatorSpot.store.getAll()).creators, (await CreatorSpot.store.getAll()).campaigns.map((c) => Object.assign({}, c, { tiktok: [] })))`.replace(/^/, '(async () => ').concat(')()'));
+  await ext.eval(`location.hash = '#creators'; true`);
+  await ext.waitFor(`!!document.querySelector('[data-tiktoks="cr_tt"]')`, 10000);
+  await ext.eval(`(async () => { document.querySelector('[data-tiktoks="cr_tt"]').click(); await new Promise((r) => setTimeout(r, 300)); document.querySelector('#ttLink').value = 'https://www.tiktok.com/@scout2015/video/${VIDEO}'; document.querySelector('#ttAddBtn').click(); await new Promise((r) => setTimeout(r, 300)); document.querySelector('#editorSave').click(); await new Promise((r) => setTimeout(r, 1200)); return true; })()`);
   const stored = await ext.eval(`CreatorSpot.store.getAll().then((d) => d.campaigns.find((c) => c.id === 'cp_tt').tiktok)`);
   check('TikTok link saved as a video ID', JSON.stringify(stored) === JSON.stringify([VIDEO]), JSON.stringify(stored));
 
