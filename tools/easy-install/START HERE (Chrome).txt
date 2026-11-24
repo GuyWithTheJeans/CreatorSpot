@@ -1,33 +1,70 @@
-CREATORSPOT FOR GOOGLE CHROME
+CREATORSPOT: HOW TO SET IT UP
 =============================
 
-Takes about 1 minute.
+About 5 minutes. Works in Chrome, Brave and Edge.
 
-1. Make sure you UNZIPPED this first.
+
+PART 1: INSTALL IT
+------------------
+
+1. UNZIP FIRST.
    Right-click the ZIP file > "Extract All..." > choose your Desktop > "Extract".
-   You should now have a "CreatorSpot" folder on your Desktop. Open it.
+   You now have a "CreatorSpot" folder on your Desktop. Open it.
    (If you just double-clicked the ZIP to look inside, it will not work.)
 
-2. Double-click "Install CreatorSpot". A small window opens and walks you
-   through it. If Windows asks "Do you want to run this file?", click "Run"
-   (or "More info" > "Run anyway").
+   Already had an older CreatorSpot? Delete the old CreatorSpot folder from your
+   Desktop first, then unzip this one in the same place.
 
-   Or do it by hand:
-   a. Open Chrome. Type  chrome://extensions  in the address bar, press Enter.
-   b. Turn ON "Developer mode" (switch in the top-right corner).
-   c. Click "Load unpacked", pick the CreatorSpot folder on your Desktop,
-      click "Select Folder".
+2. Open Chrome. Click the address bar at the top, type  chrome://extensions
+   and press Enter.
 
-3. Click the puzzle-piece icon at the top-right of Chrome and click the pin
-   next to CreatorSpot.
+3. Turn ON "Developer mode" (the switch in the top-right corner of that page).
 
-Done. Visit a site with ads (for example ign.com) and you will see
-GuyWithTheJeans and iamDoughnutDude promos where the ads were.
+4. If CreatorSpot is ALREADY in the list: click its circular-arrow (reload)
+   button. Done with Part 1.
 
-Keep the CreatorSpot folder on your Desktop. If you move or delete it,
-the extension stops working.
+   If it is NOT in the list: click "Load unpacked" (top-left), pick the
+   CreatorSpot folder on your Desktop, and click "Select Folder".
 
-GETTING A NEW VERSION
-When you get a newer ZIP: delete the old CreatorSpot folder, unzip the new
-one to the same place, then go to chrome://extensions and click the
-circular-arrow (reload) button on CreatorSpot.
+5. Click the puzzle-piece icon at the top-right of Chrome, then click the pin
+   next to CreatorSpot so its icon stays in your toolbar.
+
+
+PART 2: SIGN IN SO YOUR PROFILE SHOWS UP FOR EVERYONE
+-----------------------------------------------------
+
+6. Click the CreatorSpot icon in your toolbar, then "Open dashboard".
+
+7. On the left, click "Creators".
+
+8. Click the purple "Sign in with Twitch" button.
+   A Twitch window pops up. Log in if it asks, then click "Authorize".
+
+9. You should now see "Signed in as <your name>". Your Twitch picture and
+   channel link are filled in automatically.
+
+
+PART 3: CHANGE YOUR PROFILE AND PROMOS
+--------------------------------------
+
+10. Still on "Creators": find YOUR card and click "Edit my profile".
+    Change your name, bio, color or picture, and add more links (YouTube,
+    TikTok, Kick, Discord, website). Click "Save changes".
+
+11. Your promos: on the left click "Campaigns". Your campaigns have an "Edit"
+    button. Change the headline, message, style, picture or video, and click
+    "Save campaign". To make a new one, click "New campaign".
+
+Everything you save shows up on EVERYONE's CreatorSpot within a few minutes.
+Want to see others' changes right away? Creators > "Sync now".
+
+
+GOOD TO KNOW
+------------
+
+- Keep the CreatorSpot folder on your Desktop. Deleting it removes the extension.
+- Other creators' cards say "Synced from CreatorSpot". Only they can change
+  their own profile.
+- When there is a new version, the CreatorSpot popup tells you. Double-click
+  "Update CreatorSpot" in the CreatorSpot folder, then click the reload arrow
+  on CreatorSpot in chrome://extensions.
