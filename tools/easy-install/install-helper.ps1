@@ -145,7 +145,7 @@ $donut = New-Object System.Windows.Forms.LinkLabel
 $donut.Text = 'Enjoying CreatorSpot? Buy us a doughnut'
 $donut.Font = $fBtn; $donut.LinkColor = $cPink; $donut.ActiveLinkColor = $cInk; $donut.BackColor = [System.Drawing.Color]::Transparent
 $donut.Location = New-Object System.Drawing.Point(24, 728); $donut.Size = New-Object System.Drawing.Size(500, 30)
-$donut.Add_LinkClicked({ Start-Process 'https://streamlabs.com/guywiththejeans/tip' })
+$donut.Add_LinkClicked({ Start-Process 'https://streamlabs.com/guywiththejeans1/tip' })
 $form.Controls.Add($donut)
 
 function Copy-Text($value, $message) {

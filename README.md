@@ -1,6 +1,6 @@
 # CreatorSpot
 
-[![Buy us a doughnut](https://img.shields.io/badge/%F0%9F%8D%A9_Buy_us_a_doughnut-Streamlabs-F472B6?style=for-the-badge&labelColor=7C5CFF)](https://streamlabs.com/guywiththejeans/tip)
+[![Buy us a doughnut](https://img.shields.io/badge/%F0%9F%8D%A9_Buy_us_a_doughnut-Streamlabs-F472B6?style=for-the-badge&labelColor=7C5CFF)](https://streamlabs.com/guywiththejeans1/tip)
 
 CreatorSpot is a browser extension that turns standard website ad slots into promotions for independent creators. Creators can promote themselves, or join a fair rotation in which they promote one another.
 

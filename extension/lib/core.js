@@ -8,10 +8,10 @@
   // Both return promises from MV3 APIs, so one code path works everywhere.
   CS.api = root.browser && root.browser.runtime ? root.browser : root.chrome;
 
-  CS.VERSION = '0.2.3';
+  CS.VERSION = '0.2.4';
 
   // "Buy us a doughnut": GuyWithTheJeans' Streamlabs tip page, shown as a small support link in the dashboard and popup.
-  CS.SUPPORT_URL = 'https://streamlabs.com/guywiththejeans/tip';
+  CS.SUPPORT_URL = 'https://streamlabs.com/guywiththejeans1/tip';
 
   CS.uid = function uid(prefix) {
     const rand = Math.random().toString(36).slice(2, 8);
