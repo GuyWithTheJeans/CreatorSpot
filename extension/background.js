@@ -2,7 +2,7 @@
  * Routes messages, makes serialised rotation decisions, records analytics, manages the ad-request ruleset. */
 /* global importScripts */
 if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpot.rotation)) {
-  importScripts('lib/core.js', 'lib/platforms.js', 'lib/defaults.js', 'lib/schema.js', 'lib/rotation.js', 'lib/store.js', 'lib/live.js', 'lib/payload.js', 'lib/shared.js');
+  importScripts('lib/core.js', 'lib/platforms.js', 'lib/defaults.js', 'lib/schema.js', 'lib/rotation.js', 'lib/store.js', 'lib/live.js', 'lib/payload.js', 'lib/shared.js', 'lib/cloud.js');
 }
 
 (function () {
@@ -52,10 +52,12 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
     await applyBadgeStyle();
   });
 
-  // ---- Shared profiles (GitHub) and update check ----
-  // Downloads profiles/featured.json from the CreatorSpot GitHub repository every few minutes (checked
-  // whenever a page loads), and the newest version number every hour. Nothing about the user is sent.
+  // ---- CreatorSpot accounts (Supabase) and update check ----
+  // Every few minutes (checked whenever a page loads) this downloads all visible creator profiles, plus their
+  // pictures, and stores them locally, so web pages never contact CreatorSpot's servers. Signing in with
+  // Twitch lets a creator save their own profile online. The newest version number is checked every hour.
   const local = api.storage.local;
+  const C = CS.CLOUD;
   let syncing = null;
 
   function toDataUrl(buf, type) {
@@ -65,53 +67,188 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
     return 'data:' + type + ';base64,' + btoa(bin);
   }
 
-  async function syncShared(force) {
-    if (!CS.shared.configured()) return { ok: false, message: 'Not connected to GitHub yet.' };
+  async function saveSession(j) {
+    const expiresAt = Number(j.expires_at) || Math.floor(Date.now() / 1000) + (Number(j.expires_in) || 3600);
+    await local.set({ session: { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: expiresAt } });
+  }
+
+  async function accessToken() {
+    const { session } = await local.get('session');
+    if (!session) return null;
+    if (session.expires_at * 1000 - Date.now() > 60000) return session.access_token;
+    try {
+      const r = await fetch(C.url + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: { apikey: C.key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: session.refresh_token }),
+        credentials: 'omit',
+      });
+      if (r.status === 400 || r.status === 401) {
+        await signOutLocal();
+        return null;
+      }
+      if (!r.ok) return null;
+      const j = await r.json();
+      await saveSession(j);
+      return j.access_token;
+    } catch (e) {
+      return null; // offline
+    }
+  }
+
+  async function cloudFetch(path, opts, needAuth) {
+    const headers = Object.assign({ apikey: C.key }, (opts && opts.headers) || {});
+    if (needAuth) {
+      const token = await accessToken();
+      if (!token) throw new Error('Please sign in with Twitch again.');
+      headers.Authorization = 'Bearer ' + token;
+    }
+    const res = await fetch(C.url + path, Object.assign({}, opts, { headers, cache: 'no-store', credentials: 'omit' }));
+    const text = await res.text();
+    let body = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch (e) {
+      body = null;
+    }
+    if (!res.ok) throw new Error((body && (body.message || body.msg || body.error_description || body.error)) || 'Server answered ' + res.status);
+    return body;
+  }
+
+  async function downloadMedia(url) {
+    try {
+      const r = await fetch(url, { cache: 'no-store', credentials: 'omit' });
+      if (!r.ok) return null;
+      const type = (r.headers.get('content-type') || '').split(';')[0].trim();
+      if (!/^(image\/(png|jpeg|webp|gif)|video\/(mp4|webm))$/.test(type)) return null;
+      return await store.putMedia(toDataUrl(await r.arrayBuffer(), type));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function syncCloud(force) {
     if (syncing) return syncing;
     syncing = (async () => {
-      const { sharedMeta = {} } = await local.get('sharedMeta');
-      if (!force && sharedMeta.checkedAt && Date.now() - sharedMeta.checkedAt < CS.shared.SYNC_EVERY_MS) return { ok: true, skipped: true };
+      const { sharedMeta = {}, account = null } = await local.get(['sharedMeta', 'account']);
+      if (!force && sharedMeta.checkedAt && Date.now() - sharedMeta.checkedAt < CS.cloud.SYNC_EVERY_MS) return { ok: true, skipped: true };
       sharedMeta.checkedAt = Date.now();
       try {
-        const res = await fetch(CS.shared.fileUrl() + '?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' });
-        if (!res.ok) throw new Error('GitHub answered ' + res.status);
-        const text = await res.text();
-        if (text.length > 200000) throw new Error('The shared file is too large.');
-        if (text !== sharedMeta.text) {
-          const parsed = CS.shared.parse(JSON.parse(text));
-          if (!parsed) throw new Error('The shared file has no usable profiles.');
-          const avatarIds = {};
-          const avatarSrc = {};
-          for (const [id, file] of Object.entries(parsed.avatars)) {
-            try {
-              const r = await fetch(CS.shared.rawUrl(file) + '?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' });
-              const type = (r.headers.get('content-type') || '').split(';')[0];
-              const ext = file.split('.').pop().toLowerCase();
-              const mime = /^image\/(png|jpeg|webp|gif)$/.test(type) ? type : { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' }[ext];
-              if (!r.ok || !mime) continue;
-              avatarIds[id] = await store.putMedia(toDataUrl(await r.arrayBuffer(), mime));
-              avatarSrc[id] = file;
-            } catch (e) {
-              /* keep going without this picture */
-            }
+        const rows = await cloudFetch('/rest/v1/profiles?select=' + CS.cloud.COLUMNS + '&hidden=eq.false&order=created_at.asc&limit=2000');
+        const text = JSON.stringify(rows);
+        const ownId = account ? account.localId : null;
+        if (force || text !== sharedMeta.text || ownId !== sharedMeta.ownId) {
+          const parsed = CS.cloud.toLocal(rows);
+          const prev = (await store.sharedProfile()) || {};
+          const { cloudUploads = {} } = await local.get('cloudUploads');
+          const known = Object.assign({}, prev.mediaSrc || {});
+          Object.entries(cloudUploads).forEach(([mid, url]) => (known[url] = known[url] || mid));
+          const mediaSrc = {};
+          for (const m of parsed.media) {
+            let mid = mediaSrc[m.url] || known[m.url] || null;
+            if (mid && !(await store.getMedia(mid))) mid = null;
+            if (!mid) mid = await downloadMedia(m.url);
+            if (!mid) continue;
+            mediaSrc[m.url] = mid;
+            if (m.creatorId) parsed.creators.find((c) => c.id === m.creatorId).avatar = mid;
+            else parsed.campaigns.find((c) => c.id === m.campaignId).media[m.field] = mid;
           }
-          await store.applyShared({ creators: parsed.creators, campaigns: parsed.campaigns, avatarIds, avatarSrc });
+          await store.applyShared({ creators: parsed.creators, campaigns: parsed.campaigns, mediaSrc, ownId });
           sharedMeta.text = text;
-          sharedMeta.changedAt = Date.now();
+          sharedMeta.ownId = ownId;
+          sharedMeta.count = parsed.creators.length;
         }
-        sharedMeta.ok = true;
-        sharedMeta.error = '';
-        sharedMeta.syncedAt = Date.now();
+        Object.assign(sharedMeta, { ok: true, error: '', syncedAt: Date.now() });
         await local.set({ sharedMeta });
         return { ok: true };
       } catch (e) {
-        sharedMeta.ok = false;
-        sharedMeta.error = String((e && e.message) || e);
+        Object.assign(sharedMeta, { ok: false, error: String((e && e.message) || e) });
         await local.set({ sharedMeta });
         return { ok: false, message: sharedMeta.error };
       }
     })().finally(() => (syncing = null));
     return syncing;
+  }
+
+  async function signIn() {
+    if (!api.identity || !api.identity.launchWebAuthFlow) throw new Error('This browser does not support signing in from extensions yet.');
+    const redirect = api.identity.getRedirectURL();
+    const result = await api.identity.launchWebAuthFlow({
+      url: C.url + '/auth/v1/authorize?provider=twitch&redirect_to=' + encodeURIComponent(redirect),
+      interactive: true,
+    });
+    const params = new URLSearchParams(result.split('#')[1] || result.split('?')[1] || '');
+    if (params.get('error')) throw new Error(params.get('error_description') || params.get('error'));
+    if (!params.get('access_token')) throw new Error('Sign-in did not finish. Please try again.');
+    await saveSession({ access_token: params.get('access_token'), refresh_token: params.get('refresh_token'), expires_at: params.get('expires_at'), expires_in: params.get('expires_in') });
+    const profile = await cloudFetch('/rest/v1/rpc/ensure_my_profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, true);
+    const account = { id: profile.id, login: profile.twitch_login, name: profile.name, featured: !!profile.featured, localId: CS.cloud.localId(profile) };
+    await local.set({ account });
+    if (account.featured && !(Array.isArray(profile.campaigns) && profile.campaigns.length)) {
+      // First sign-in of a featured creator: put their built-in promos online so they can edit them.
+      const def = CS.defaultCreators().find((c) => c.id === account.localId);
+      if (def) {
+        const body = CS.cloud.toRemote(def, CS.defaultCampaigns(), () => null);
+        delete body.avatar_url;
+        await cloudFetch('/rest/v1/profiles?id=eq.' + account.id, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(body) }, true);
+      }
+    }
+    await syncCloud(true);
+    return account;
+  }
+
+  async function signOutLocal() {
+    await local.remove(['session', 'account']);
+  }
+
+  async function signOut() {
+    try {
+      await cloudFetch('/auth/v1/logout', { method: 'POST' }, true);
+    } catch (e) {
+      /* already signed out on the server */
+    }
+    await signOutLocal();
+    await syncCloud(true);
+  }
+
+  /** Save the signed-in creator's own profile and campaigns online (uploading new pictures and videos). */
+  async function cloudSave(creator, campaigns) {
+    const { account, cloudUploads = {} } = await local.get(['account', 'cloudUploads']);
+    if (!account) throw new Error('Sign in with Twitch first.');
+    if (!creator || creator.id !== account.localId) throw new Error('You can only change your own profile.');
+    const sp = (await store.sharedProfile()) || {};
+    const byId = {};
+    Object.entries(sp.mediaSrc || {}).forEach(([url, mid]) => (byId[mid] = url));
+    Object.assign(byId, cloudUploads);
+    const mine = (campaigns || []).filter((c) => c.creatorId === creator.id);
+    const ids = [creator.avatar].concat(...mine.map((c) => [c.media && c.media.imageId, c.media && c.media.videoId])).filter(Boolean);
+    for (const mid of ids) {
+      if (byId[mid]) continue;
+      const dataUrl = await store.getMedia(mid);
+      const m = dataUrl && dataUrl.match(/^data:([^;]+);base64,(.*)$/);
+      if (!m) continue;
+      const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'video/mp4': 'mp4', 'video/webm': 'webm' }[m[1]];
+      if (!ext) continue;
+      const bin = atob(m[2]);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const path = account.id + '/' + mid + '.' + ext;
+      await cloudFetch('/storage/v1/object/media/' + path, { method: 'POST', headers: { 'Content-Type': m[1], 'x-upsert': 'true' }, body: bytes }, true);
+      byId[mid] = cloudUploads[mid] = CS.cloud.MEDIA_PREFIX + path;
+      await local.set({ cloudUploads });
+    }
+    const body = CS.cloud.toRemote(creator, mine, (mid) => byId[mid] || null);
+    await cloudFetch('/rest/v1/profiles?id=eq.' + account.id, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(body) }, true);
+    return syncCloud(true);
+  }
+
+  async function adminList() {
+    return cloudFetch('/rest/v1/profiles?select=id,twitch_login,name&hidden=eq.true&order=updated_at.desc&limit=200', {}, true);
+  }
+
+  async function adminHide(cloudId, value) {
+    await cloudFetch('/rest/v1/rpc/set_hidden', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: cloudId, value: !!value }) }, true);
+    return syncCloud(true);
   }
 
   async function checkForUpdate(force) {
@@ -133,7 +270,7 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
   }
 
   function backgroundSync() {
-    ready.then(() => Promise.all([syncShared(false), checkForUpdate(false)])).catch(() => {});
+    ready.then(() => Promise.all([syncCloud(false), checkForUpdate(false)])).catch(() => {});
   }
   backgroundSync();
 
@@ -174,6 +311,9 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
     const fromTab = sender.tab && typeof sender.tab.id === 'number';
     const fromExtension = sender.id === api.runtime.id;
     if (!fromExtension) return false;
+    // Account actions only come from CreatorSpot's own pages (dashboard, popup), never from content scripts.
+    const fromOwnPage = typeof sender.url === 'string' && sender.url.startsWith(api.runtime.getURL(''));
+    if (['sign-in', 'sign-out', 'cloud-save', 'admin-list', 'admin-hide'].includes(msg.type) && !fromOwnPage) return false;
 
     const respond = (p) => { // p: () => Promise
       ready.then(p).then(reply, (e) => reply({ error: String((e && e.message) || e) }));
@@ -209,8 +349,20 @@ if (typeof importScripts === 'function' && !(self.CreatorSpot && self.CreatorSpo
           api.action.setBadgeText({ tabId: sender.tab.id, text: n ? String(n) : '' }).catch(() => {});
         }
         return false;
+      case 'account':
+        return respond(() => local.get(['account', 'sharedMeta']).then((d) => ({ account: d.account || null, meta: d.sharedMeta || {} })));
+      case 'sign-in':
+        return respond(() => signIn().then((account) => ({ ok: true, account }), (e) => ({ ok: false, message: String((e && e.message) || e) })));
+      case 'sign-out':
+        return respond(() => signOut().then(() => ({ ok: true })));
+      case 'cloud-save':
+        return respond(() => cloudSave(msg.creator, msg.campaigns).then((r) => r, (e) => ({ ok: false, message: String((e && e.message) || e) })));
+      case 'admin-list':
+        return respond(() => adminList().then((list) => ({ ok: true, list }), (e) => ({ ok: false, message: String((e && e.message) || e) })));
+      case 'admin-hide':
+        return respond(() => adminHide(String(msg.cloudId || ''), msg.value).then((r) => r, (e) => ({ ok: false, message: String((e && e.message) || e) })));
       case 'sync-now':
-        return respond(() => Promise.all([syncShared(true), checkForUpdate(true)]).then(([sync, update]) => ({ sync, update })));
+        return respond(() => Promise.all([syncCloud(true), checkForUpdate(true)]).then(([sync, update]) => ({ sync, update })));
       case 'reset-stats':
         return respond(() => store.resetStats().then(() => true));
       case 'reset-demo':

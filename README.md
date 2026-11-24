@@ -4,7 +4,7 @@ CreatorSpot is a browser extension that turns standard website ad slots into pro
 
 * Works in **Chrome, Brave, Edge and Opera** from one package. Tested automatically in Chrome 157, Edge 158 and Brave 1.100.
 * Built for **Firefox 121+** from the same code, but not yet tested. See the checklist.
-* No build step, no dependencies, no servers. Your data stays in your browser. The only download is the shared profiles file from this repository (see below).
+* No build step and no dependencies. Your browsing never leaves your browser; the only downloads are public creator profiles and the version check.
 
 ## Download
 
@@ -12,9 +12,11 @@ CreatorSpot is a browser extension that turns standard website ad slots into pro
 
 To update later, double-click **Update CreatorSpot** in that folder, then click the reload arrow on CreatorSpot in your browser's extensions page. CreatorSpot's popup tells you when a new version is out.
 
-## Shared profiles
+## Creator accounts
 
-The GuyWithTheJeans and iamDoughnutDude profiles live in [`profiles/featured.json`](profiles/featured.json). Every copy of CreatorSpot downloads that file every few minutes, so editing it on GitHub updates the promos for everyone. [`profiles/HOW-TO-EDIT.md`](profiles/HOW-TO-EDIT.md) explains how.
+Creators open the CreatorSpot dashboard, go to **Creators** and click **Sign in with Twitch**. Their profile, campaigns, pictures and videos then sync to every CreatorSpot within a few minutes. Everyone who signs in joins the creator rotation. GuyWithTheJeans and iamDoughnutDude are featured and can remove abusive profiles.
+
+Accounts run on [Supabase](https://supabase.com). `supabase/setup.sql` creates the database. Every creator can change only their own profile, enforced by row-level security in the database.
 
 ## Install it (the easy way)
 

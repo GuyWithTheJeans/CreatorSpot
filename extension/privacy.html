@@ -23,7 +23,14 @@
   <p class="subtle">Last updated: 22 November 2026</p>
 
   <h2>The short version</h2>
-  <p>CreatorSpot works entirely inside your browser. We do not run servers that receive your data, we do not have user accounts, and we never sell, share or rent information about you or your browsing.</p>
+  <p>CreatorSpot works inside your browser and never records or sends what you browse. Creators can choose to sign in with Twitch so their public creator profile is shown to everyone who uses CreatorSpot. Viewers never need an account. We never sell, share or rent information about you or your browsing.</p>
+
+  <h2>Creator accounts (optional)</h2>
+  <ul>
+    <li>Signing in with Twitch gives CreatorSpot your Twitch user name, display name and profile picture. Twitch also shares your email address with our sign-in provider (Supabase). It is used only for the login and is never shown or shared.</li>
+    <li>What you put in your creator profile (name, bio, color, channel links, campaigns, and pictures or videos you upload) is <strong>public</strong>: every CreatorSpot user downloads it so your promotions can appear for them. Do not put private information in it.</li>
+    <li>You can sign out at any time. To delete your profile completely, contact the CreatorSpot team.</li>
+  </ul>
 
   <h2>What CreatorSpot reads</h2>
   <ul>
@@ -41,7 +48,8 @@
 
   <h2>Network requests</h2>
   <ul>
-    <li>CreatorSpot downloads one public file from GitHub every few minutes: the shared profiles of its featured creators. That keeps them the same on every install. Every few hours it also asks GitHub whether a newer version exists. These are plain downloads. They send no cookies and nothing about you or the pages you visit, and GitHub only sees an ordinary request from your internet connection.</li>
+    <li>Every few minutes CreatorSpot downloads the public creator profiles (and their pictures) from its database at supabase.co, and pictures from Twitch's image server. It stores them in your browser, so the web pages you visit never contact CreatorSpot's servers. Every hour it asks GitHub whether a newer version of CreatorSpot exists. These downloads send no cookies and nothing about you or the pages you visit.</li>
+    <li>If you sign in as a creator, saving your profile sends it to the CreatorSpot database.</li>
     <li>If you enable the optional Twitch live-status integration, CreatorSpot asks Twitch whether the creators in your rotation are live. These requests go directly from your browser to api.twitch.tv, using credentials you provide, and only after you grant permission.</li>
     <li>When you click a promotion, your browser opens the creator’s channel. That site’s own privacy policy applies.</li>
   </ul>

@@ -18,26 +18,29 @@
   }
 
   /**
-   * Featured creators always run: restore any that are missing, and keep their campaigns present and enabled.
-   * When the shared profiles file from GitHub has been downloaded (`sp`), it is the source of truth for
-   * those creators: their profile and campaigns are replaced with the shared version on every install.
+   * Featured creators always run: restore any that are missing, and keep their built-in campaigns present.
+   * When CreatorSpot accounts have been downloaded (`sp`), they are the source of truth: every signed-up
+   * creator's profile and campaigns are replaced with the online version on every install, creators who
+   * left (or were removed by an admin) disappear, and the signed-in person's own profile is marked "You".
    */
   function ensureFeatured(creators, campaigns, sp) {
     let outCreators = creators.slice();
     let outCampaigns = campaigns.slice();
     const managed = new Set();
     if (sp && Array.isArray(sp.creators)) {
+      const online = new Set(sp.creators.map((c) => c.id));
+      const gone = new Set(outCreators.filter((c) => /^net_/.test(c.id) && !online.has(c.id)).map((c) => c.id));
+      outCreators = outCreators.filter((c) => !gone.has(c.id));
       sp.creators.forEach((rc) => {
-        if (!CS.isFeatured(rc.id)) return;
         managed.add(rc.id);
-        const next = Object.assign({}, rc, { avatar: (sp.avatarIds && sp.avatarIds[rc.id]) || null });
+        const next = Object.assign({}, rc, { isOwn: rc.id === sp.ownId, participates: true });
         const i = outCreators.findIndex((c) => c.id === rc.id);
-        if (i === -1) outCreators.unshift(next);
+        if (i === -1) outCreators.push(next);
         else outCreators[i] = next;
       });
       outCampaigns = outCampaigns
-        .filter((c) => !managed.has(c.creatorId))
-        .concat((sp.campaigns || []).filter((c) => managed.has(c.creatorId)).map((c) => Object.assign({}, c, { enabled: true })));
+        .filter((c) => !managed.has(c.creatorId) && !gone.has(c.creatorId))
+        .concat((sp.campaigns || []).filter((c) => managed.has(c.creatorId)));
     }
     CS.defaultCreators()
       .filter((c) => CS.isFeatured(c.id))

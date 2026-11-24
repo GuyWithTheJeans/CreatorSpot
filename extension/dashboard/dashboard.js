@@ -29,13 +29,32 @@
   }
 
   const creatorById = (id) => S.creators.find((c) => c.id === id);
-  // Featured creators' profiles and campaigns are shared through GitHub, so everyone sees the same thing.
-  // They always run and are changed on GitHub, not here.
-  const locked = (cp) => CS.isFeatured(cp.creatorId);
-  const githubButton = () =>
-    CS.shared.configured()
-      ? '<a class="btn sm" href="' + esc(CS.shared.editUrl()) + '" target="_blank" rel="noopener noreferrer">' + ui.icon('edit') + 'Edit on GitHub</a>'
-      : '';
+  // Creators with a CreatorSpot account (and the featured creators) are synced: everyone sees the same
+  // profile, and only its owner can change it, after signing in with Twitch.
+  const synced = (c) => !!c && (!!c.cloudId || !!c.featured);
+  const mine = (c) => !!c && !!c.cloudId && !!c.isOwn;
+  const locked = (cp) => {
+    const c = creatorById(cp.creatorId);
+    return synced(c) && !mine(c);
+  };
+
+  /** Save creators and campaigns. Changes to your own synced profile are saved online first, for everyone. */
+  async function persist(creators, campaigns) {
+    const me = creators.find(mine);
+    if (me) {
+      const before = JSON.stringify([S.creators.find((c) => c.id === me.id), S.campaigns.filter((x) => x.creatorId === me.id)]);
+      const after = JSON.stringify([me, campaigns.filter((x) => x.creatorId === me.id)]);
+      if (before !== after) {
+        const r = await api.runtime.sendMessage({ type: 'cloud-save', creator: me, campaigns }).catch(() => null);
+        if (!r || r.ok === false) {
+          ui.toast('Could not save online: ' + ((r && r.message) || 'check your internet connection.'), true);
+          return false;
+        }
+      }
+    }
+    await store.saveProfiles(creators, campaigns);
+    return true;
+  }
 
   function renderSideStatus() {
     const on = S.settings.enabled;
@@ -194,8 +213,15 @@
       (compact
         ? ''
         : '<div class="subtle">' + camps.length + (camps.length === 1 ? ' campaign' : ' campaigns') + ' · ' + esc(c.category) + '</div>' +
-          (c.featured
-            ? '<div class="card-actions">' + githubButton() + '<span class="subtle" style="margin-left:auto">Shared profile, always in the rotation</span></div>'
+          (mine(c)
+            ? '<div class="card-actions"><button class="btn sm primary" data-edit="' + esc(c.id) + '">' + ui.icon('edit') + 'Edit my profile</button>' +
+              '<a class="btn sm" href="#campaigns/new?creator=' + encodeURIComponent(c.id) + '">' + ui.icon('plus') + 'Campaign</a>' +
+              '<span class="subtle" style="margin-left:auto">Synced to everyone</span></div>'
+            : synced(c)
+            ? '<div class="card-actions"><span class="subtle">' + (c.featured ? 'Featured · synced from CreatorSpot' : 'Synced from CreatorSpot') + '</span>' +
+              (account && account.featured && !c.featured && c.cloudId
+                ? '<button class="btn sm ghost danger" data-hide="' + esc(c.cloudId) + '" data-name="' + esc(c.name) + '" style="margin-left:auto">' + ui.icon('trash') + 'Remove from CreatorSpot</button>'
+                : '') + '</div>'
             : '<div class="card-actions"><button class="btn sm" data-edit="' + esc(c.id) + '">' + ui.icon('edit') + 'Edit</button>' +
               '<a class="btn sm" href="#campaigns/new?creator=' + encodeURIComponent(c.id) + '">' + ui.icon('plus') + 'Campaign</a>' +
               '<button class="btn sm ghost danger" data-remove="' + esc(c.id) + '" style="margin-left:auto">' + ui.icon('trash') + 'Remove</button></div>')) +
@@ -207,9 +233,10 @@
     view.innerHTML =
       '<div class="page-head"><div><h1>Creators</h1><p class="muted">Profiles that can appear in promotions. Each one can link to several platforms.</p></div>' +
       '<button class="btn primary" id="addCreator">' + ui.icon('plus') + 'Add creator</button></div>' +
-      '<div class="card sync-note" id="syncNote" style="margin-bottom:16px"></div>' +
+      '<div class="card account-card" id="accountCard" style="margin-bottom:16px"></div>' +
       '<div class="creator-grid" id="creatorGrid"></div>';
-    renderSyncNote();
+    await loadAccount();
+    renderAccountCard();
     const grid = $('#creatorGrid');
     if (!S.creators.length) {
       grid.outerHTML = '<div class="empty"><h3>No creators yet</h3><p>Add your own channel, or creators you want to support.</p></div>';
@@ -220,32 +247,92 @@
     view.addEventListener('click', onCreatorAction);
   }
 
-  /** Shows where GuyWithTheJeans and iamDoughnutDude's shared profiles come from, with a "Check now" button. */
-  async function renderSyncNote() {
-    const box = $('#syncNote');
+  // ---------- Account (Sign in with Twitch) ----------
+  let account = null;
+  let syncMeta = {};
+  async function loadAccount() {
+    const r = await api.runtime.sendMessage({ type: 'account' }).catch(() => null);
+    account = (r && r.account) || null;
+    syncMeta = (r && r.meta) || {};
+  }
+
+  function renderAccountCard() {
+    const box = $('#accountCard');
     if (!box) return;
-    if (!CS.shared.configured()) {
-      box.remove();
-      return;
-    }
-    const { sharedMeta = {} } = await api.storage.local.get('sharedMeta');
-    const when = sharedMeta.syncedAt ? new Date(sharedMeta.syncedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'not yet';
-    box.innerHTML =
-      '<div class="row wrap" style="gap:12px;align-items:center"><div class="grow"><strong>Shared profiles</strong> ' +
-      '<span class="muted">GuyWithTheJeans and iamDoughnutDude come from GitHub, so every copy of CreatorSpot shows the same profiles. ' +
-      'Changes show up within a few minutes. Last checked: ' + esc(when) + '.' +
-      (sharedMeta.ok === false ? ' <span class="badge warn">Could not reach GitHub</span>' : '') + '</span></div>' +
-      '<button class="btn sm" id="syncNow">Check now</button></div>';
-    $('#syncNow').addEventListener('click', async () => {
+    const when = syncMeta.syncedAt ? new Date(syncMeta.syncedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'not yet';
+    const status =
+      '<div class="subtle" style="margin-top:6px">' + (syncMeta.count ? syncMeta.count + ' creators on CreatorSpot · ' : '') + 'Last synced: ' + esc(when) +
+      (syncMeta.ok === false ? ' · <span class="badge warn">Could not connect</span>' : '') + '</div>';
+    box.innerHTML = account
+      ? '<div class="row wrap" style="gap:12px;align-items:center"><div class="grow"><strong>Signed in as ' + esc(account.name || account.login) + '</strong>' +
+        (account.featured ? ' <span class="badge brand">Admin</span>' : '') +
+        '<div class="muted">Your profile, campaigns and pictures sync to everyone who uses CreatorSpot. Changes show up for others within a few minutes.</div>' + status + '</div>' +
+        '<button class="btn sm" id="syncNow">Sync now</button>' +
+        (account.featured ? '<button class="btn sm" id="removedList">Removed creators</button>' : '') +
+        '<button class="btn sm ghost" id="signOut">Sign out</button></div>'
+      : '<div class="row wrap" style="gap:12px;align-items:center"><div class="grow"><strong>Join CreatorSpot</strong>' +
+        '<div class="muted">Sign in with Twitch to put your channel in everyone\'s rotation. Your profile, campaigns and pictures sync to every CreatorSpot.</div>' + status + '</div>' +
+        '<button class="btn sm" id="syncNow">Sync now</button>' +
+        '<button class="btn primary" id="signIn">' + CS.platforms.icon('twitch', 16) + 'Sign in with Twitch</button></div>';
+    const on = (id, fn) => $(id) && $(id).addEventListener('click', fn);
+    on('#signIn', async () => {
+      $('#signIn').disabled = true;
+      const r = await api.runtime.sendMessage({ type: 'sign-in' }).catch((e) => ({ ok: false, message: String(e && e.message) }));
+      await reload();
+      if (r && r.ok) ui.toast('Signed in. Welcome to CreatorSpot, ' + (r.account.name || r.account.login) + '!');
+      else ui.toast((r && r.message) || 'Sign-in did not finish.', true);
+      route();
+    });
+    on('#signOut', async () => {
+      if (!(await confirmDialog('Sign out?', 'Your profile stays on CreatorSpot. You can sign back in any time to change it.', 'Sign out'))) return;
+      await api.runtime.sendMessage({ type: 'sign-out' }).catch(() => null);
+      await reload();
+      ui.toast('Signed out.');
+      route();
+    });
+    on('#syncNow', async () => {
       $('#syncNow').disabled = true;
       const r = await api.runtime.sendMessage({ type: 'sync-now' }).catch(() => null);
       await reload();
-      ui.toast(r && r.sync && r.sync.ok ? 'Shared profiles are up to date.' : 'Could not reach GitHub. Try again later.');
+      ui.toast(r && r.sync && r.sync.ok ? 'Everything is up to date.' : 'Could not connect. Try again later.', !(r && r.sync && r.sync.ok));
       route();
     });
+    on('#removedList', showRemoved);
+  }
+
+  async function showRemoved() {
+    const r = await api.runtime.sendMessage({ type: 'admin-list' }).catch(() => null);
+    if (!r || !r.ok) return ui.toast((r && r.message) || 'Could not load the list.', true);
+    const rows = r.list.length
+      ? r.list.map((x) => '<div class="row between" style="padding:8px 0"><span>' + esc(x.name) + ' <span class="subtle">twitch.tv/' + esc(x.twitch_login) + '</span></span><button class="btn sm" data-restore="' + esc(x.id) + '">Restore</button></div>').join('')
+      : '<p class="muted">Nobody has been removed.</p>';
+    openEditor('Removed creators', '<div class="stack">' + rows + '</div>', (body) => {
+      body.addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-restore]');
+        if (!b) return;
+        b.disabled = true;
+        const res = await api.runtime.sendMessage({ type: 'admin-hide', cloudId: b.dataset.restore, value: false }).catch(() => null);
+        if (res && res.ok) {
+          b.textContent = 'Restored';
+          await reload();
+        } else ui.toast((res && res.message) || 'Could not restore.', true);
+      });
+    }, async () => {
+      route();
+    }, 'Done');
   }
 
   async function onCreatorAction(e) {
+    const hide = e.target.closest('[data-hide]');
+    if (hide) {
+      const ok = await confirmDialog('Remove ' + hide.dataset.name + ' from CreatorSpot?', 'Their promos stop showing for everyone within a few minutes. You can restore them later from "Removed creators".', 'Remove');
+      if (!ok) return;
+      const r = await api.runtime.sendMessage({ type: 'admin-hide', cloudId: hide.dataset.hide, value: true }).catch(() => null);
+      if (!r || r.ok === false) return ui.toast((r && r.message) || 'Could not remove.', true);
+      ui.toast(hide.dataset.name + ' was removed from CreatorSpot.');
+      await reload();
+      return route();
+    }
     const edit = e.target.closest('[data-edit]');
     const remove = e.target.closest('[data-remove]');
     if (edit) editCreator(creatorById(edit.dataset.edit));
@@ -254,7 +341,7 @@
       const n = S.campaigns.filter((x) => x.creatorId === c.id).length;
       const ok = await confirmDialog('Remove ' + c.name + '?', 'This removes the profile' + (n ? ' and its ' + n + (n === 1 ? ' campaign' : ' campaigns') : '') + '. Analytics already collected are kept.', 'Remove');
       if (!ok) return;
-      await store.saveProfiles(S.creators.filter((x) => x.id !== c.id), S.campaigns.filter((x) => x.creatorId !== c.id));
+      await persist(S.creators.filter((x) => x.id !== c.id), S.campaigns.filter((x) => x.creatorId !== c.id));
       const settings = S.settings;
       await store.saveSettings({
         excluded: settings.excluded.filter((id) => id !== c.id),
@@ -293,8 +380,8 @@
       '<div><button type="button" class="btn sm" id="pAdd">' + ui.icon('plus') + 'Add another platform</button></div>' +
       '<span class="error-text hidden" data-err="platforms"></span>' +
       '<span class="hint">Paste a link and the platform is detected automatically. The first link is the default destination.</span></div>' +
-      '<div class="toggle-line full"><div><div class="title">This is my channel</div><div class="desc">Used by “Promote myself” and “Mixed” modes.</div></div><label class="switch"><input type="checkbox" name="isOwn"' + (c.isOwn ? ' checked' : '') + '><span></span></label></div>' +
-      '<div class="toggle-line full"><div><div class="title">Include in creator rotation</div><div class="desc">' + (c.featured ? 'Featured creators are always in the rotation.' : 'Lets this creator appear in the shared rotation.') + '</div></div><label class="switch"><input type="checkbox" name="participates"' + (c.participates || c.featured ? ' checked' : '') + (c.featured ? ' disabled' : '') + '><span></span></label></div>' +
+      (c.cloudId ? '' : '<div class="toggle-line full"><div><div class="title">This is my channel</div><div class="desc">Used by “Promote myself” and “Mixed” modes.</div></div><label class="switch"><input type="checkbox" name="isOwn"' + (c.isOwn ? ' checked' : '') + '><span></span></label></div>' +
+      '<div class="toggle-line full"><div><div class="title">Include in creator rotation</div><div class="desc">' + (c.featured ? 'Featured creators are always in the rotation.' : 'Lets this creator appear in the shared rotation.') + '</div></div><label class="switch"><input type="checkbox" name="participates"' + (c.participates || c.featured ? ' checked' : '') + (c.featured ? ' disabled' : '') + '><span></span></label></div>') +
       '</div>';
 
     openEditor(existing ? 'Edit creator' : 'Add creator', html, (body) => {
@@ -369,14 +456,14 @@
         category: $('[name=category]', body).value.trim() || 'Gaming',
         bio: $('[name=bio]', body).value.trim(),
         accent: $('[name=accent]', body).value,
-        isOwn: $('[name=isOwn]', body).checked,
-        participates: $('[name=participates]', body).checked,
+        isOwn: c.cloudId ? true : $('[name=isOwn]', body).checked,
+        participates: c.cloudId ? true : $('[name=participates]', body).checked,
         platforms,
       });
       const creators = existing ? S.creators.map((x) => (x.id === next.id ? next : x)) : S.creators.concat(next);
       // Keep campaign destinations valid if links were removed.
       const campaigns = S.campaigns.map((cp) => (cp.creatorId === next.id && cp.platformIndex >= platforms.length ? Object.assign({}, cp, { platformIndex: 0 }) : cp));
-      await store.saveProfiles(creators, campaigns);
+      if (!(await persist(creators, campaigns))) return false;
       ui.toast(existing ? 'Changes saved.' : name + ' was added.');
       await reload();
       if (!existing && !S.campaigns.some((x) => x.creatorId === next.id)) {
@@ -411,8 +498,8 @@
           '<div class="meta"><span class="badge brand">' + esc(fmt.label) + '</span>' +
           (p ? '<span class="badge">' + CS.platforms.icon(p.type, 12) + esc(CS.platforms.get(p.type).label) + '</span>' : '') +
           '<span class="badge">Priority: ' + PRIORITY[cp.priority] + '</span>' + (sched ? '<span class="badge">' + esc(sched) + '</span>' : '') + '</div></div>' +
-          '<div class="row-actions">' + (locked(cp) ? '<span class="badge brand">Featured, always on</span>' : '<label class="switch" title="' + (cp.enabled ? 'Enabled' : 'Disabled') + '"><input type="checkbox" data-toggle="' + esc(cp.id) + '"' + (cp.enabled ? ' checked' : '') + ' aria-label="Campaign enabled"><span></span></label>') +
-          '<div class="row">' + (locked(cp) ? githubButton() : '<button class="btn sm" data-cedit="' + esc(cp.id) + '">' + ui.icon('edit') + 'Edit</button>') + (locked(cp) ? '' : '<button class="btn sm ghost danger" data-cremove="' + esc(cp.id) + '" aria-label="Delete campaign">' + ui.icon('trash') + '</button>') + '</div></div>' +
+          '<div class="row-actions">' + (locked(cp) ? '<span class="badge brand">' + (cp.enabled ? 'On' : 'Paused') + '</span>' : '<label class="switch" title="' + (cp.enabled ? 'Enabled' : 'Disabled') + '"><input type="checkbox" data-toggle="' + esc(cp.id) + '"' + (cp.enabled ? ' checked' : '') + ' aria-label="Campaign enabled"><span></span></label>') +
+          '<div class="row">' + (locked(cp) ? '<span class="subtle">Synced</span>' : '<button class="btn sm" data-cedit="' + esc(cp.id) + '">' + ui.icon('edit') + 'Edit</button>') + (locked(cp) ? '' : '<button class="btn sm ghost danger" data-cremove="' + esc(cp.id) + '" aria-label="Delete campaign">' + ui.icon('trash') + '</button>') + '</div></div>' +
           '</article>'
         );
       })
@@ -428,7 +515,7 @@
       if (rm) {
         const cp = S.campaigns.find((x) => x.id === rm.dataset.cremove);
         if (!(await confirmDialog('Delete “' + cp.name + '”?', 'This campaign will stop appearing. This cannot be undone.', 'Delete'))) return;
-        await store.saveProfiles(S.creators, S.campaigns.filter((x) => x.id !== cp.id));
+        await persist(S.creators, S.campaigns.filter((x) => x.id !== cp.id));
         ui.toast('Campaign deleted.');
         await reload();
         route();
@@ -438,7 +525,7 @@
       const t = e.target.closest('[data-toggle]');
       if (!t) return;
       const campaigns = S.campaigns.map((x) => (x.id === t.dataset.toggle ? Object.assign({}, x, { enabled: t.checked }) : x));
-      await store.saveProfiles(S.creators, campaigns);
+      await persist(S.creators, campaigns);
       await reload();
       t.closest('.campaign-row').classList.toggle('off', !t.checked);
       ui.toast(t.checked ? 'Campaign enabled.' : 'Campaign paused.');
@@ -460,10 +547,10 @@
     if (!S.creators.length) return ui.toast('Add a creator before creating a campaign.', true);
     const cp = existing
       ? JSON.parse(JSON.stringify(existing))
-      : { id: '', creatorId: presetCreator || (S.creators.find((c) => c.isOwn) || S.creators[0]).id, name: '', headline: '', message: '', cta: '', format: 'spotlight', platformIndex: 0, priority: 3, enabled: true, schedule: { start: '', end: '', days: [] }, media: {} };
+      : { id: '', creatorId: presetCreator || (S.creators.find((c) => c.isOwn) || S.creators.find((c) => !synced(c)) || S.creators[0]).id, name: '', headline: '', message: '', cta: '', format: 'spotlight', platformIndex: 0, priority: 3, enabled: true, schedule: { start: '', end: '', days: [] }, media: {} };
     let size = SIZES[0];
 
-    const creatorOpts = S.creators.filter((c) => !c.featured || c.id === cp.creatorId).map((c) => '<option value="' + esc(c.id) + '"' + (c.id === cp.creatorId ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('');
+    const creatorOpts = S.creators.filter((c) => !synced(c) || mine(c) || c.id === cp.creatorId).map((c) => '<option value="' + esc(c.id) + '"' + (c.id === cp.creatorId ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('');
     const formatCards = CS.FORMATS.map(
       (f) => '<button type="button" class="choice" role="radio" data-format="' + f.id + '" aria-checked="' + (f.id === cp.format) + '"><span class="title">' + esc(f.label) + '</span><span class="desc">' + esc(f.description) + '</span></button>'
     ).join('');
@@ -587,7 +674,7 @@
       cp.name = cp.name || cp.headline;
       cp.id = cp.id || CS.uid('cp');
       const campaigns = existing ? S.campaigns.map((x) => (x.id === cp.id ? cp : x)) : S.campaigns.concat(cp);
-      await store.saveProfiles(S.creators, campaigns);
+      if (!(await persist(S.creators, campaigns))) return false;
       ui.toast(existing ? 'Campaign saved.' : 'Campaign created.');
       await reload();
       route();
