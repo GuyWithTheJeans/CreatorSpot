@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "CreatorSpot",
   "short_name": "CreatorSpot",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA/XsIswhMSPGzziZ8AAaUGP6d8lF/CTKWOTO2CaOvYVISb5LH3UxMBcr39FVNcbLzQpOARlL6aN2YLzjt6giO/16G+qkN87Z/ee4UAf0p/GAEoRE7n1rp2/aWaFevjIPauXCjHJVeCasGwvdBrs5QFKW9CwODVOmplNWnJjlGk7MLlcfGAEWVxAJdSYLIIzyNUjuovm8ljCbKNq8FaTputSWRb20GWkIPkM0fz46mNAKBSwfgnXVmv2RrfYkNFkgapAqn98IE8h7AF8ukZKgETR0omaeglqgcZJ2y7dvHGVd1/eOVasqOIBqixJhXmUIXs1+AlFhpSJeYswanhDUIGQIDAQAB",
   "description": "Turn web ad slots into promotions for independent creators. Creators sign in with Twitch to share their profile with everyone.",
   "icons": {

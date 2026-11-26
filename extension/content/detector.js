@@ -107,6 +107,7 @@
 
     adapter.strong.forEach((sel) => document.querySelectorAll(sel).forEach((el) => consider(el, true)));
     adapter.weak.forEach((sel) => document.querySelectorAll(sel).forEach((el) => consider(el, false)));
+    if (adapter.extra) adapter.extra().forEach((el) => consider(el, true));
 
     // A loosely named wrapper ("weak") that contains a real ad slot ("strong") yields to the real slot.
     const precise = out.filter((q) => q.strong || !out.some((p) => p !== q && p.strong && q.el.contains(p.el)));

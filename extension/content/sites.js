@@ -75,9 +75,32 @@
       'ytd-banner-promo-renderer',
       '#masthead-ad',
       '#player-ads',
+      // Newer spots: the "ads" panel above the related videos (companion banners from mid-roll ads).
+      'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
+      'ytd-ads-engagement-panel-content-renderer',
+      'ytd-player-legacy-desktop-watch-ads-renderer',
     ],
     weak: [],
-    containers: 'ytd-ad-slot-renderer, ytd-in-feed-ad-layout-renderer, ytd-companion-slot-renderer, #player-ads, #masthead-ad',
+    containers: 'ytd-ad-slot-renderer, ytd-in-feed-ad-layout-renderer, ytd-companion-slot-renderer, #player-ads, #masthead-ad, ' +
+      'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
+    /**
+     * Catch-all for ad boxes YouTube renames: anything in the sidebar wearing YouTube's own "Sponsored"
+     * badge component. We claim the whole sidebar block that holds the badge (never the player).
+     */
+    extra: () => {
+      const out = [];
+      document.querySelectorAll(
+        '#secondary :is(ad-badge-view-model, feed-ad-metadata-view-model, .ytwAdBadgeViewModelHost, .ytwFeedAdMetadataViewModelHost)'
+      ).forEach((badge) => {
+        if (badge.closest('#movie_player')) return;
+        let block = badge;
+        while (block.parentElement && !block.parentElement.matches('#secondary-inner, #panels, #related, #items, #contents, #secondary')) {
+          block = block.parentElement;
+        }
+        if (block.parentElement && block !== badge && !block.matches('#related, #items, #contents, #panels')) out.push(block);
+      });
+      return out;
+    },
     /** Video ads: report whether a video ad is playing. We only observe a CSS class; we never modify the player. */
     videoAdPlaying: () => !!document.querySelector('#movie_player.ad-showing'),
     /** Where an adjacent (not replacing) creator card can be shown while a video ad plays. */

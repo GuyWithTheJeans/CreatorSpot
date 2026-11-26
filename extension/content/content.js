@@ -148,6 +148,17 @@
   }
 
   async function scanOnce() {
+    // Sites like YouTube swap pages without reloading and throw our old promos away; forget those so
+    // they don't count toward the per-page limit.
+    for (let i = mounted.length - 1; i >= 0; i--) {
+      const m = mounted[i];
+      if (document.contains(m.host)) continue;
+      m.io && m.io.disconnect();
+      m.ro && m.ro.disconnect();
+      m.guard && m.guard.disconnect();
+      if (m.target && document.contains(m.target)) m.target.removeAttribute(ATTR);
+      mounted.splice(i, 1);
+    }
     // Fill top-to-bottom so readers meet the rotation in order.
     const placements = CS.detector
       .find(adapter, { compat: compatOn() })

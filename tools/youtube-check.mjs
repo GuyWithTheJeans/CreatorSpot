@@ -37,6 +37,33 @@ try {
   const display = await page.eval(`(() => { const h = document.querySelector('#cs-test-slot creatorspot-promo'); return h ? h.shadowRoot.querySelector('.name').textContent + ' ' + Math.round(h.getBoundingClientRect().width) + 'x' + Math.round(h.getBoundingClientRect().height) : null; })()`);
   check('Sidebar display ad slot replaced', !!display, display || 'not replaced');
 
+  // 1b. Newer spots: the "ads" panel above related videos, and a renamed ad box that only wears the Sponsored badge.
+  await page.eval(`(() => {
+    const side = document.querySelector('#secondary-inner') || document.querySelector('#secondary');
+    let panels = side.querySelector('#panels');
+    if (!panels) { panels = document.createElement('div'); panels.id = 'panels'; side.insertBefore(panels, side.firstChild); }
+    const p = document.createElement('ytd-engagement-panel-section-list-renderer');
+    p.setAttribute('target-id', 'engagement-panel-ads');
+    p.id = 'cs-test-panel';
+    p.style.cssText = 'display:block;width:100%;height:300px;background:#246';
+    panels.appendChild(p);
+    const items = document.querySelector('#related #items') || document.querySelector('#related');
+    const box = document.createElement('some-new-ad-layout');
+    box.id = 'cs-test-badge';
+    box.style.cssText = 'display:block;width:100%;height:280px;background:#642';
+    const inner = document.createElement('div');
+    inner.appendChild(document.createElement('ad-badge-view-model')).textContent = 'Sponsored';
+    box.appendChild(inner);
+    items.insertBefore(box, items.firstChild);
+  })()`);
+  await sleep(2000);
+  for (const id of ['cs-test-panel', 'cs-test-badge']) {
+    const r = await page.eval(`(() => { const s = document.getElementById('${id}'); const h = s && s.querySelector('creatorspot-promo'); const hiddenKids = s ? [...s.children].filter((c) => c !== h).every((c) => getComputedStyle(c).display === 'none') : false; return h ? Math.round(h.getBoundingClientRect().height) + 'px, original hidden: ' + hiddenKids : null; })()`);
+    check('Newer sidebar ad (' + id + ') replaced', !!r && r.endsWith('true'), r || 'not replaced');
+  }
+  const related = await page.eval(`document.querySelectorAll('#related ytd-compact-video-renderer creatorspot-promo, #related yt-lockup-view-model creatorspot-promo').length`);
+  check('Normal related videos are left alone', related === 0, related + ' promos inside normal videos');
+
   // 2. Video ad starts: YouTube adds the "ad-showing" class to the player.
   await page.eval(`document.querySelector('#movie_player').classList.add('ad-showing')`);
   await sleep(2500);
